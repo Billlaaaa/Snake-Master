@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CFA & CAT Mastery Quest</title>
+    
+    <!-- 1. Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { slate: { 850: '#1e293b', 900: '#0f172a', 950: '#020617' } } } }
+        }
+    </script>
+
+    <!-- 2. React & ReactDOM (Global) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- 3. Babel (Compiles JSX) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- 4. Firebase (Compat Mode - Works locally!) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        body { background-color: #020617; color: white; font-family: sans-serif; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // --- FIREBASE CONFIG (YOUR KEYS) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBV9XnopGLtHorx9rgwmzW_loTserbguds",
+            authDomain: "snake-master-8d658.firebaseapp.com",
+            projectId: "snake-master-8d658",
+            storageBucket: "snake-master-8d658.firebasestorage.app",
+            messagingSenderId: "600223686750",
+            appId: "1:600223686750:web:c6cabb02da3807c24394cf",
+            measurementId: "G-71T3GWYME4"
+        };
+
+        // Initialize Firebase (Compat)
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const appId = "snake-master-live";
+
+        // --- ICONS ---
+        const Icon = ({ path, color = "currentColor", size = 20, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {path}
+            </svg>
+        );
+
+        const Icons = {
+            Trophy: (p) => <Icon path={<><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></>} {...p} />,
+            Brain: (p) => <Icon path={<><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></>} {...p} />,
+            BookOpen: (p) => <Icon path={<><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></>} {...p} />,
+            Newspaper: (p) => <Icon path={<><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></>} {...p} />,
+            Footprints: (p) => <Icon path={<><path d="M4 16v-2.38C4 11.5 2.97 10.5 3 8c.03-2.72 1.49-6 4.5-6C9.37 2 11 3.8 11 8c0 1.25-.76 2.5-2 3.29V22c-1.5 0-3-.5-4-1.5V16Z"/><path d="M14 5c-.78 2.57-1 4.35-1 8 0 2.5 1.03 3.5 1 6v2.38c0 1 1.5 1.5 4 1.5 2.5 0 4-1.5 4-1.5V12.7c-1.24-.79-2-2.04-2-3.29 0-4.2-1.63-6-3.5-6-3.01 0-4.47 3.28-4.5 6"/></>} {...p} />,
+            Zap: (p) => <Icon path={<><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></>} {...p} />,
+            Heart: (p) => <Icon path={<><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></>} {...p} />,
+            Crown: (p) => <Icon path={<><path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/></>} {...p} />,
+            CheckCircle: (p) => <Icon path={<><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></>} {...p} />,
+            ChevronDown: (p) => <Icon path={<><path d="m6 9 6 6 6-6"/></>} {...p} />,
+            ChevronRight: (p) => <Icon path={<><path d="m9 18 6-6-6-6"/></>} {...p} />,
+            Target: (p) => <Icon path={<><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></>} {...p} />,
+            Loader2: (p) => <Icon className="animate-spin" path={<><path d="M21 12a9 9 0 1 1-6.219-8.56"/></>} {...p} />,
+            X: (p) => <Icon path={<><path d="M18 6 6 18"/><path d="m6 6 18 12"/></>} {...p} />,
+            Clock: (p) => <Icon path={<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>} {...p} />,
+            Google: (p) => <Icon path={<><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-1-16v8l7-4-7-4z" fill="transparent" stroke="none"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5.05 13.44c-.7 1.95-2.55 3.36-4.75 3.36-2.76 0-5-2.24-5-5s2.24-5 5-5c1.32 0 2.5.5 3.39 1.32l1.9-1.9C16.38 6.84 14.34 6 12.3 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c3.04 0 5.6-2.2 6-5.14H12v-2.6h5.45c.05.3.09.6.09.94 0 .17-.02.34-.04.5z" fill="currentColor"/></>} {...p} />,
+            Guest: (p) => <Icon path={<><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></>} {...p} />
+        };
+
+        // --- CONSTANTS ---
+        const RANKS = [
+            { name: 'Bronze', minXP: 0, color: 'text-orange-400', border: 'border-orange-500/50', bg: 'bg-orange-500' },
+            { name: 'Silver', minXP: 5000, color: 'text-slate-300', border: 'border-slate-400/50', bg: 'bg-slate-400' },
+            { name: 'Gold', minXP: 15000, color: 'text-yellow-400', border: 'border-yellow-500/50', bg: 'bg-yellow-500' },
+            { name: 'Platinum', minXP: 35000, color: 'text-cyan-400', border: 'border-cyan-500/50', bg: 'bg-cyan-500' },
+            { name: 'Diamond', minXP: 65000, color: 'text-fuchsia-400', border: 'border-fuchsia-500/50', bg: 'bg-fuchsia-500' },
+            { name: 'Master', minXP: 100000, color: 'text-rose-500', border: 'border-rose-500/50', bg: 'bg-rose-500' }
+        ];
+
+        const START_DATE = new Date('2026-01-14T00:00:00');
+
+        // --- SYLLABUS DATA ---
+        const CFA_SYLLABUS = [
+            {id: 'quant', title: 'Quantitative Methods', modules: [
+                { title: 'Topic 1: Time Value of Money', subtopics: [{title: 'TVM – 1', time: 42}, {title: 'TVM – 2', time: 60}, {title: 'Cash Flow & Ordinary Annuity', time: 39}, {title: 'Annuity Due', time: 52}, {title: 'Unequal CF & Perpetuity', time: 38}, {title: 'Compounding Frequency & Effective Rates', time: 80}, {title: 'Bond', time: 30}, {title: 'Loan Amortization – 1', time: 73}, {title: 'Loan Amortization – 2', time: 7}, {title: 'Continuous Rates – 1', time: 62}, {title: 'Continuous Rates – 2', time: 45}, {title: 'Equivalent Rate', time: 11}, {title: 'Perpetuity Sum', time: 27}, {title: 'Interest & Annuity Factors', time: 5}, {title: 'Growth & Retirement Sum', time: 41}, {title: 'Cash Flow Additivity', time: 9}, {title: 'MWROR & TWROR', time: 42}, {title: 'Returns: Gross, Net, Leveraged', time: 23}] },
+                { title: 'Topic 2: TVM in Finance', subtopics: [{title: 'Annualized Rate Clarification', time: 3}] },
+                { title: 'Topic 3: Statistical Measures', subtopics: [{title: 'Measures of Central Tendency – 1', time: 46}, {title: 'Measures of Central Tendency – 2', time: 35}, {title: 'AM, GM, HM, IRR vs GM', time: 80}, {title: 'GM Difficult Sum', time: 10}, {title: 'Skewness & Kurtosis', time: 57}, {title: 'Covariance & Correlation', time: 53}, {title: 'Data Types', time: 28}, {title: 'Weights & Frequency', time: 13}, {title: 'Tackling Outliers', time: 11}, {title: 'Downside Deviation', time: 28}, {title: 'Frequency Distribution', time: 42}, {title: 'Quartile/Decile/Percentile', time: 22}, {title: 'Interpolation', time: 29}, {title: 'Contingency Table', time: 20}] },
+                { title: 'Topic 4: Probability', subtopics: [{title: 'Probability Concepts', time: 63}, {title: 'Expected Value Formula', time: 33}, {title: 'Expected Value Sums', time: 38}, {title: 'Portfolio Variance', time: 70}, {title: 'Conditional EV & Counting', time: 40}, {title: 'Probability Tree', time: 10}] },
+                { title: 'Topic 5: Portfolio Mathematics', subtopics: [{title: 'Probability Concepts', time: 62}, {title: 'EV from Probability Table', time: 30}, {title: 'Roy’s Safety First Criterion', time: 34}] },
+                { title: 'Topic 6: Probability Distributions', subtopics: [{title: 'Distributions – 1', time: 36}, {title: 'Probability Functions', time: 22}, {title: 'Binomial – 1', time: 32}, {title: 'Binomial – 2', time: 24}, {title: 'Normal Distribution – 1', time: 35}, {title: 'Standard Normal', time: 51}, {title: 'Confidence Interval', time: 57}, {title: 'Z Table', time: 29}, {title: 'Lognormal – 1', time: 51}, {title: 'Lognormal – 2', time: 18}, {title: 'Normal Distribution – 2', time: 20}, {title: 'Sharpe Ratio', time: 40}, {title: 'Sensitivity / Scenario / Stress', time: 34}, {title: 'Monte Carlo Simulation', time: 29}, {title: 'Chi-Square & F', time: 9}, {title: 'IID Returns', time: 18}] },
+                { title: 'Topic 7: Sampling Estimation & Inference', subtopics: [{title: 'Point Estimation & CI', time: 52}, {title: 'Sampling', time: 70}, {title: 'Sampling Distribution', time: 54}, {title: 'T Table', time: 25}, {title: 'Z vs T', time: 20}, {title: 'CLT & Good Estimator', time: 41}, {title: 'SD vs SE', time: 13}, {title: 'Sample Correlation', time: 3}, {title: 'Bootstrap & Jackknife', time: 33}] },
+                { title: 'Topic 8: Hypothesis Testing', subtopics: [{title: 'Intro', time: 40}, {title: 'One-Tail / Two-Tail', time: 25}, {title: 'HT Sums – 1', time: 38}, {title: 'HT Sums – 2', time: 43}, {title: 'Steps & Types', time: 31}, {title: 'Variance Test', time: 30}, {title: 'Equality of Variance', time: 30}, {title: 'Dependent Sample', time: 26}, {title: 'Independent Sample – 1', time: 32}, {title: 'Independent Sample – 2', time: 24}, {title: 'P-Value', time: 37}, {title: 'P-Value Sums', time: 45}, {title: 'Type I & II Error, Power', time: 35}, {title: 'Statistical vs Economic Significance', time: 6}, {title: 'Adjusted Significance', time: 24}, {title: 'T Distribution', time: 64}] },
+                { title: 'Topic 9: Correlation Tests', subtopics: [{title: 'Test of Correlation', time: 36}, {title: 'Spearman Rank', time: 26}, {title: 'Contingency Table', time: 35}] },
+                { title: 'Topic 10: Simple Linear Regression', subtopics: [{title: 'Correlation & Covariance', time: 23}, {title: 'OLS & Coefficients', time: 46}, {title: 'SSR, SSE, TSS, R²', time: 27}, {title: 'Assumptions', time: 30}, {title: 'T Tests', time: 40}, {title: 'ANOVA', time: 47}, {title: 'Predicted Value', time: 12}, {title: 'Functional Forms', time: 20}] },
+                { title: 'Topic 11: Big Data Techniques', subtopics: [{title: 'Fintech in IM – 1', time: 60}, {title: 'Fintech in IM – 2', time: 49}] }
+            ]},
+            {id: 'econ', title: 'Economics', modules: [
+                { title: 'Topic 00: Introduction to Economics', subtopics: [{title: 'How to Study Economics', time: 9}, {title: 'Intro to Economics', time: 2}] },
+                { title: 'Topic 12: The Firm & Market Structures', subtopics: [{title: 'Shutdown Point, LRATC', time: 75}, {title: 'Market Structures', time: 40}, {title: 'N-Firm Concentration & HHI', time: 51}, {title: 'Monopolistic Competition', time: 45}, {title: 'Price & Market Structures', time: 3}, {title: 'Oligopoly: Kinked Demand Curve', time: 32}, {title: 'Nash Equilibrium', time: 39}, {title: 'Cournot, Stackelberg, Dominant Firm', time: 34}, {title: 'Summary', time: 9}] },
+                { title: 'Topic 13: Understanding Business Cycles', subtopics: [{title: 'Business Cycles', time: 65}, {title: 'Credit Cycles', time: 13}, {title: 'Resource Use Fluctuations', time: 60}, {title: 'Economic Indicators', time: 26}, {title: 'Unemployment', time: 30}, {title: 'Inflation', time: 21}] },
+                { title: 'Topic 14: Fiscal Policy', subtopics: [{title: 'Monetary vs Fiscal Policy', time: 32}, {title: 'Objectives & Debt Ratio', time: 48}, {title: 'Fiscal Policy Tools', time: 26}, {title: 'Fiscal Policy Lags', time: 48}, {title: 'Fiscal Multiplier', time: 56}, {title: 'Sum of Multipliers', time: 2}] },
+                { title: 'Topic 15: Monetary Policy', subtopics: [{title: 'Central Bank Rule', time: 50}, {title: 'Monetary Policy Tools', time: 37}, {title: 'Monetary Policy & CB', time: 52}, {title: 'Limitations', time: 51}, {title: 'Interaction with Fiscal Policy', time: 24}, {title: 'Quantity Theory of Money', time: 26}] },
+                { title: 'Topic 16: Introduction to Geopolitics', subtopics: [{title: 'Intro', time: 3}, {title: 'Geopolitics – 1', time: 47}, {title: 'Geopolitical Risk', time: 53}, {title: 'Tools & Organizations', time: 40}] },
+                { title: 'Topic 17: International Trade', subtopics: [{title: 'Trading Blocs', time: 28}, {title: 'Trade Basics', time: 40}, {title: 'Costs vs Benefits', time: 45}, {title: 'Tariff & Quota', time: 39}, {title: 'Deadweight Loss', time: 3}, {title: 'Trade Restrictions', time: 50}] },
+                { title: 'Topic 18: Capital Flows & FX Market', subtopics: [{title: 'Exchange Rate Regimes', time: 51}, {title: 'Real Exchange Rate', time: 51}, {title: 'Real Exchange Rate – II', time: 47}, {title: 'Capital Restrictions', time: 17}, {title: 'FX Market', time: 12}, {title: 'Changes in Exchange Rates', time: 29}] },
+                { title: 'Topic 19: Exchange Rate Calculations', subtopics: [{title: 'Exchange Rate Foundations', time: 84}, {title: 'Currency Forward Rate', time: 36}, {title: 'Currency Forward Arbitrage', time: 54}, {title: 'Forward % & Points', time: 55}, {title: 'Forward Sums', time: 15}, {title: 'Forward Rate Formula', time: 3}] },
+                { title: 'Topic 20: Agg. Output Prices & Growth', subtopics: [{title: 'GDP, GNP, Real vs Nominal', time: 68}, {title: 'Growth – 1', time: 37}, {title: 'Growth – 2', time: 45}, {title: 'IS–LM, AD–AS, GDP Graphs', time: 70}, {title: 'Shifts in AD & AS', time: 34}, {title: 'Growth – 3', time: 66}, {title: 'Growth – 4', time: 44}] },
+                { title: 'Topic 21: Currency Exchange Rates', subtopics: [{title: 'Currency Basics', time: 70}] },
+                { title: 'Topic 22: Demand & Supply Analysis', subtopics: [{title: 'Demand, Supply, Elasticity', time: 50}, {title: 'Elasticity Sums', time: 7}, {title: 'Factors of Production', time: 39}, {title: 'Price Discrimination', time: 5}, {title: 'Elasticity & Total Revenue', time: 3}] },
+                { title: 'Topic 23: Intro to the Firm & Market', subtopics: [{title: 'Product Cost: Total, Avg, Marginal', time: 30}, {title: 'Accounting vs Economic Profit', time: 30}, {title: 'AVC, AR, MR, MC', time: 56}] }
+            ]},
+            {id: 'fsa', title: 'FSA', modules: [
+                { title: 'Topic 00: Introduction to FSA', subtopics: [{title: 'Introduction to Financial Statement Analysis', time: 22}] },
+                { title: 'Topic 27: Intro to FSA (Framework & Reporting)', subtopics: [{title: 'How to Study FSA: Core vs Prerequisites', time: 2}, {title: 'Financial Reporting vs Financial Statement Analysis', time: 25}, {title: 'Financial Statements, MD&A, Notes – 1', time: 35}, {title: 'Audit Opinion', time: 40}, {title: 'IFRS, US GAAP, SEC', time: 52}, {title: 'FSA Assumptions', time: 2}, {title: 'Information Sources, SEC Filings', time: 38}, {title: 'Segment Reporting', time: 17}] },
+                { title: 'Topic 28: Analyzing Income Statements & Balance Sheets', subtopics: [{title: 'AA, E, L, ACC, RUED, Prepaid', time: 47}, {title: 'Income Statement – 1', time: 80}, {title: 'Income Statement Details – 1', time: 30}, {title: 'Minority Interest – 1', time: 25}, {title: 'Stock Split, Dividend, Rights Shares', time: 67}, {title: 'Basic EPS', time: 50}, {title: 'Diluted EPS', time: 32}, {title: 'Diluted EPS – 2', time: 94}, {title: 'Assets: Current, Tangible, Intangible, Identifiable', time: 37}, {title: 'Depreciation, Amortization & Depletion', time: 30}, {title: 'Depreciation – 1', time: 60}, {title: 'Revenue Recognition', time: 45}, {title: 'Revenue Recognition Methods', time: 52}, {title: 'Expensing', time: 55}, {title: 'Receivables, Warranty & Inventory', time: 35}, {title: 'Capitalizing vs Expensing (Ratios)', time: 26}, {title: 'Capitalizing vs Expensing – Sum 1', time: 6}, {title: 'Capitalizing vs Expensing – Sum 2', time: 66}, {title: 'Capitalized Interest', time: 31}, {title: 'Non-Recurring Items', time: 20}, {title: 'Research & Development Costs', time: 34}, {title: 'Changes in Accounting Policies', time: 45}, {title: 'Changes in Shareholders’ Equity', time: 14}] },
+                { title: 'Topic 29: Analyzing Balance Sheets', subtopics: [{title: 'Assets, Intangible Assets & R&D', time: 45}, {title: 'Long-Term Financial Liabilities', time: 12}, {title: 'Goodwill Summary', time: 15}, {title: 'Financial Instruments Accounting', time: 62}] },
+                { title: 'Topic 30: Analyzing Statements of Cash Flows – 1', subtopics: [{title: 'Introduction to Cash Flow Statements', time: 35}, {title: 'Cash Flow Calculations', time: 43}, {title: 'Cash Flow Statement – 1', time: 39}, {title: 'Cash Flow Statements – Sum 1', time: 53}, {title: 'CFO Indirect Method', time: 60}, {title: 'Cash Flow Statement Analysis – 1', time: 18}, {title: 'Indirect Method to Direct Method', time: 25}] },
+                { title: 'Topic 31: Analyzing Statements of Cash Flows – 2', subtopics: [{title: 'CFO, FCFF & FCFE', time: 62}, {title: 'Cash Flow Statements – Sum 2', time: 23}, {title: 'Cash Flow Ratios', time: 22}] },
+                { title: 'Topic 32: Analysis of Inventories', subtopics: [{title: 'Inventory & COGS', time: 21}, {title: 'Inventory Valuation Methods', time: 62}, {title: 'FIFO, LIFO Impact', time: 31}, {title: 'LIFO Reserve', time: 43}, {title: 'LIFO Liquidation', time: 28}, {title: 'Inventory Measurement (IFRS vs US GAAP)', time: 50}, {title: 'Inventory Disclosures', time: 40}, {title: 'Inventory Sum – 1', time: 30}, {title: 'Inventory Sum – 2', time: 15}] },
+                { title: 'Topic 33: Analysis of Long-Term Assets', subtopics: [{title: 'Intangible Asset Creation', time: 46}, {title: 'Impairment Loss', time: 76}, {title: 'Long-Term Asset Disclosures', time: 30}, {title: 'Derecognition & Spin-Offs', time: 32}] },
+                { title: 'Topic 34: Long-Term Liabilities & Equity', subtopics: [{title: 'Introduction to Leases', time: 36}, {title: 'Lease Accounting', time: 75}, {title: 'Lease Accounting Ratios', time: 55}, {title: 'Lessor Accounting', time: 33}, {title: 'Lessor Accounting – 2', time: 26}, {title: 'Lessor Accounting Revision', time: 7}, {title: 'Share-Based Compensation', time: 57}, {title: 'Long-Term Liabilities', time: 24}, {title: 'Pension Plans: DCP & DBP', time: 77}] },
+                { title: 'Topic 35: Analysis of Income Taxes', subtopics: [{title: 'Introduction to Income Taxes & DDL', time: 60}, {title: 'Deferred Tax Assets & Permanent Differences', time: 43}, {title: 'DTA, DTL & Differences', time: 50}, {title: 'Carrying Value vs Tax Base', time: 32}, {title: 'DTA, DTL & Changes in Tax', time: 47}, {title: 'Income Tax Expense', time: 24}, {title: 'Valuation Analysis of DTA & DTL', time: 41}, {title: 'DTA, DTL – Sums', time: 32}, {title: 'Tax Rates & Disclosures', time: 36}, {title: 'Income Tax Disclosures', time: 19}] },
+                { title: 'Topic 36: Financial Reporting Quality', subtopics: [{title: 'Financial Reporting Quality', time: 59}, {title: 'Low-Quality Reports: Reasons', time: 27}, {title: 'Regulators & GAAP Measures', time: 23}, {title: 'Choices and Warning Signs', time: 56}] },
+                { title: 'Topic 37: Financial Analysis Techniques', subtopics: [{title: 'Ratios', time: 25}, {title: 'Profitability Ratios', time: 48}, {title: 'Activity Ratios', time: 69}, {title: 'Liquidity Ratios', time: 46}, {title: 'Solvency Ratios', time: 48}, {title: 'DuPont Analysis', time: 37}, {title: 'Financial Analysis Techniques', time: 46}, {title: 'Pro Forma Financial Statements', time: 11}, {title: 'Relationship Among Ratios', time: 10}, {title: 'Industry-Specific Ratios', time: 32}] },
+                { title: 'Topic 38: Introduction to Financial Statement Modeling', subtopics: [{title: 'Introduction to Financial Modeling', time: 34}, {title: 'Financial Modeling & Forecasting', time: 46}, {title: 'Analyst Forecast Horizon', time: 55}, {title: 'Analyst Forecast Behavioral Factors', time: 46}, {title: 'Summary: Introduction to Financial Statements Modeling', time: 10}] }
+            ]},
+            {id: 'corp', title: 'Corporate Issuers', modules: [
+                { title: 'Topic 24: Org Forms & Corporate Governance', subtopics: [{title: 'Org Forms Corporate Issuers Features', time: 3}, {title: 'Introduction to Corporate Governance – 1', time: 15}, {title: 'Introduction to Corporate Governance – 2', time: 9}, {title: 'Introduction to Corporate Governance – 3', time: 17}, {title: 'Corporate Governance (Bonus)', time: 2}] },
+                { title: 'Topic 25: Working Capital and Liquidity', subtopics: [{title: 'Working Capital and Liquidity – 1', time: 7}, {title: 'Working Capital and Liquidity – 2', time: 5}] },
+                { title: 'Topic 26: Capital Inv. & Structure', subtopics: [{title: 'NPV and IRR', time: 90}, {title: 'Real Options', time: 22}, {title: 'Capital Investments – 1', time: 20}, {title: 'Capital Investments – 2', time: 17}, {title: 'Capital Investments – 3', time: 15}, {title: 'Capital Investments – 4', time: 15}, {title: 'Capital Investments – 5', time: 8}, {title: 'Capital Structure – 1', time: 10}, {title: 'Capital Structure – 2', time: 2}, {title: 'Business Models – 1', time: 29}, {title: 'Business Models – 2', time: 40}] }
+            ]},
+            {id: 'equity', title: 'Equity Investments', modules: [
+                { title: 'Topic 39: Market Organization and Structure', subtopics: [{title: 'Introduction to Market Organization and Structure', time: 3}, {title: 'Financial System and Assets', time: 35}, {title: 'Financial Intermediaries', time: 57}, {title: 'Positions and Short Sales, Leveraged Positions', time: 60}, {title: 'Margin Calls (Stocks)', time: 46}, {title: 'Market Orders and Instructions', time: 78}, {title: 'Primary and Secondary Markets', time: 48}, {title: 'Market Structures and Regulators', time: 50}] },
+                { title: 'Topic 40: Security Market Indexes', subtopics: [{title: 'Security Market Indexes', time: 60}, {title: 'Index Calculations', time: 41}, {title: 'Stock Split Impact on Index Calculation', time: 62}, {title: 'Comparing All Indexes', time: 37}, {title: 'Rebalancing, Reconstitution, Uses of Indexes', time: 47}, {title: 'Equity, Fixed Income and Alternative Indexes', time: 64}] },
+                { title: 'Topic 41: Market Efficiency', subtopics: [{title: 'Forms of Market Efficiency', time: 68}, {title: 'Factors Affecting Market Efficiency', time: 65}, {title: 'Market Anomalies', time: 77}, {title: 'Behavioral Finance and Anomalies', time: 31}] },
+                { title: 'Topic 42: Overview of Equity Securities', subtopics: [{title: 'Types of Equity and Preference Shares', time: 60}, {title: 'Equity Risk and Return', time: 34}, {title: 'GDR and ADR', time: 54}, {title: 'Public and Private Equity Securities', time: 13}, {title: 'ROE, P/B, Ke vs ER', time: 40}, {title: 'Fair Value vs Intrinsic Value', time: 4}] },
+                { title: 'Topic 43: Company Analysis – Past and Present', subtopics: [{title: 'Research Reports', time: 51}, {title: 'Business Model and Information', time: 26}, {title: 'Revenue Drivers and Pricing Power', time: 60}, {title: 'DOL, DFL, DTL', time: 102}, {title: 'Summary: Company Analysis (Past & Present)', time: 9}] },
+                { title: 'Topic 44: Industry and Competitive Analysis', subtopics: [{title: 'Industry Analysis and Equity Research', time: 56}, {title: 'Industry Classification', time: 15}, {title: 'Industry Size, Growth, Profitability and Trends', time: 46}, {title: 'Porter’s Five Forces', time: 60}, {title: 'PESTLE Analysis', time: 30}, {title: 'Competitive Strategy', time: 48}, {title: 'Industry and Competitive Analysis', time: 31}, {title: 'Summary of Industry and Competitive Analysis', time: 10}] },
+                { title: 'Topic 45: Company Analysis – Forecasting', subtopics: [{title: 'Forecasting Objectives', time: 33}, {title: 'Forecast Approaches', time: 47}, {title: 'Top-Down Revenue Forecasting', time: 45}, {title: 'Bottom-Up, Recurring and Non-Recurring Items', time: 36}, {title: 'COGS, SG&A Expenses, Working Capital', time: 45}, {title: 'Forecasting Capex, Capital Investments, etc.', time: 26}] },
+                { title: 'Topic 46: Equity Valuation Concepts and Basic Models', subtopics: [{title: 'Introduction to Equity Valuation Concepts', time: 3}, {title: 'Dividend Formulas', time: 36}, {title: 'Ex-Dividend and Cum-Dividend', time: 27}, {title: 'Dividends, Stock Splits, Share Repurchases', time: 63}, {title: 'Gross Merchandise Value', time: 4}, {title: 'Valuation Models – Introduction', time: 22}, {title: 'Dividend Discount Model', time: 24}, {title: 'Gordon Growth Model', time: 30}, {title: 'Growth Rate Estimation', time: 44}, {title: 'Multi-Stage Dividend Growth Model', time: 43}, {title: 'Valuing Preferred Stock', time: 24}, {title: 'Implied Growth Rate', time: 24}, {title: 'Multiple-Based Valuation', time: 78}, {title: 'Justified Multiples', time: 46}, {title: 'EBITDA Valuation Model', time: 53}, {title: 'Asset-Based Valuation Model', time: 23}, {title: 'Free Cash Flow Based Valuation', time: 33}, {title: 'Valuation Models: Summary, Advantages & Disadvantages', time: 55}] }
+            ]},
+            {id: 'fixed', title: 'Fixed Income', modules: [
+                { title: 'Topic 47: Fixed Income Instrument Features', subtopics: [{title: 'Fixed Income Instrument Features – 1', time: 60}, {title: 'Bond Indenture and Covenants', time: 36}] },
+                { title: 'Topic 48: Fixed Income Cash Flows and Types', subtopics: [{title: 'Cash Flow Structures (FI – 1)', time: 38}, {title: 'Coupon Structures – 1', time: 53}, {title: 'Fixed Income Contingency Provisions – 1', time: 36}, {title: 'Fixed Income Contingency Provisions – 2', time: 35}, {title: 'Domestic and International Bonds', time: 45}, {title: 'Taxation of Bond Income', time: 28}] },
+                { title: 'Topic 49: Fixed Income Issuance and Trading', subtopics: [{title: 'Fixed Income Market Segments', time: 50}, {title: 'Fixed Income Indexes', time: 23}, {title: 'Primary and Secondary Fixed Income Markets', time: 37}] },
+                { title: 'Topic 50: Fixed Income Markets – Corporate Issues', subtopics: [{title: 'Short-Term Funding: Non-Financial Corporations', time: 40}, {title: 'Short-Term Funding', time: 21}, {title: 'Repurchase Agreements', time: 90}, {title: 'Long-Term Funding', time: 20}] },
+                { title: 'Topic 51: Fixed Income Markets – Government Issues', subtopics: [{title: 'Sovereign Debt', time: 47}, {title: 'Sovereign and Non-Sovereign Debt', time: 60}, {title: 'Issuance of Government Bonds', time: 48}] },
+                { title: 'Topics 52–53: Fixed Income Valuation', subtopics: [{title: 'Bond Pricing', time: 51}, {title: 'Price–Yield Curve', time: 55}, {title: 'Bond Amortization', time: 31}, {title: 'YTM, Semi-Annual, Value vs Price', time: 37}, {title: 'Full Price vs Flat Price', time: 60}, {title: 'Zero-Coupon Bonds and STRIPS', time: 52}, {title: 'Spot Rates', time: 77}, {title: 'Calculating Forward Rates', time: 42}, {title: 'Forward Rates – Sum 1', time: 24}, {title: 'Calculating Spot and Bond Prices from Forward Rates', time: 29}, {title: 'Bootstrapping Spot Rates', time: 13}, {title: 'Par Rates', time: 44}, {title: 'Yield Curves', time: 29}, {title: 'Reinvesting Coupons', time: 16}, {title: 'Matrix Pricing', time: 23}, {title: 'Spreads', time: 30}, {title: 'OAS, CB, PB', time: 22}, {title: 'Yield Measures (OAP, OAY)', time: 54}, {title: 'Issuer of a Callable Bond', time: 2}, {title: 'Simple Yield', time: 5}] },
+                { title: 'Topic 54: Yield and Yield Spread Measures (Floating Rate)', subtopics: [{title: 'Floating Rate Note Yields', time: 90}, {title: 'Money Market Yields', time: 35}] },
+                { title: 'Topics 55–57: Fixed Income Risk and Return', subtopics: [{title: 'Reinvestment Rate Risk vs YTM', time: 27}, {title: 'Duration and Modified Duration', time: 64}, {title: 'Duration – Zero Coupon Bonds', time: 38}, {title: 'Effective Duration and Effective Convexity', time: 80}, {title: 'Effective Duration & Convexity – Sums', time: 38}, {title: 'Callable and Putable Bonds', time: 44}, {title: 'Long vs Short Duration', time: 4}, {title: 'Modified Duration', time: 18}, {title: 'Duration Factors', time: 22}, {title: 'Portfolio Duration', time: 33}, {title: 'PVBP', time: 20}, {title: 'Dollar Duration', time: 10}, {title: 'Term Structure of Yield Volatility', time: 12}, {title: 'Duration & Convexity Recap', time: 18}, {title: 'Recap', time: 2}, {title: 'Difference Between Duration Measures', time: 12}, {title: 'Positive vs Negative Reinvestment Risk', time: 2}] },
+                { title: 'Topic 58: Yield-Based Bond Convexity and Portfolio Convexity', subtopics: [{title: 'Convexity – Approximate and Effective', time: 48}, {title: 'Money Convexity and Portfolio Convexity', time: 32}] },
+                { title: 'Topic 59: Curve-Based and Empirical Fixed Income Risk Measures', subtopics: [{title: 'Key Rate Duration', time: 65}, {title: 'Empirical and Analytical Duration', time: 33}] },
+                { title: 'Topic 60: Credit Risk', subtopics: [{title: 'Credit Risk – Introduction', time: 39}, {title: 'Credit Risk in Debt Instruments', time: 29}, {title: 'Measuring Credit Risk', time: 47}, {title: 'Credit Ratings', time: 50}, {title: 'Credit Spread Risk', time: 9}, {title: 'Credit Spread Risk – 2', time: 63}] },
+                { title: 'Topic 61: Credit Analysis for Government Issuers', subtopics: [{title: 'Sovereign Government Debt', time: 30}, {title: 'Non-Sovereign Government Debt', time: 32}] },
+                { title: 'Topic 62: Credit Analysis for Corporate Issuers', subtopics: [{title: 'Corporate Issuers: Credit Analysis Factors', time: 33}, {title: 'Credit Analysis Financial Ratios', time: 41}, {title: 'Credit Analysis Seniority Rankings', time: 50}, {title: 'Notching and Low-Rated Issuers', time: 5}] },
+                { title: 'Topic 63: Fixed Income Securitization', subtopics: [{title: 'Asset Securitization', time: 80}, {title: 'Securitization: Parties and Roles', time: 38}, {title: 'Securitization Process, Benefits and Risks', time: 30}] },
+                { title: 'Topic 64: Asset-Backed Security Instruments', subtopics: [{title: 'Covered Bonds', time: 23}, {title: 'Credit Enhancement in Securitization', time: 40}, {title: 'Non-Mortgage Asset-Backed Securities', time: 45}, {title: 'Collateralized Debt Obligations (CDOs)', time: 31}] },
+                { title: 'Topic 65: Mortgage-Backed Security Instruments', subtopics: [{title: 'Prepayment Risk and Time Tranching', time: 34}, {title: 'Residential MBS (RMBS)', time: 39}, {title: 'Commercial MBS (CMBS)', time: 43}, {title: 'Mortgage Pass-Through Securities', time: 28}, {title: 'Collateralized Mortgage Obligations (CMOs)', time: 53}] }
+            ]},
+            {id: 'deriv', title: 'Derivatives', modules: [
+                { title: 'Topics 66–67: Forwards and Futures', subtopics: [{title: 'Derivatives Introduction', time: 80}, {title: 'Forward Contracts', time: 32}, {title: 'Futures Contracts', time: 37}, {title: 'Initial Margin, Maintenance Margin, Variation Margin', time: 64}, {title: 'Open Interest and Volume', time: 25}, {title: 'Cash-and-Carry Arbitrage', time: 44}, {title: 'Reverse Cash-and-Carry Arbitrage', time: 70}, {title: 'Forward Price Formula', time: 46}, {title: 'Pricing Forwards', time: 50}, {title: 'Mark-to-Rate (MRR)', time: 22}, {title: 'Forward Rate Agreements (FRA)', time: 49}, {title: 'Synthetic FRA', time: 30}, {title: 'FRA Recap', time: 10}, {title: 'Futures Pricing', time: 28}] },
+                { title: 'Topic 68: Derivative Instruments and Derivative Management', subtopics: [{title: 'Hedging and Underlying', time: 22}, {title: 'Exchange-Traded Derivatives', time: 46}] },
+                { title: 'Topic 69: Derivative Benefits Risks and Issuers', subtopics: [{title: 'Advantages, Risks, and Uses', time: 81}] },
+                { title: 'Topic 70: Pricing and Valuation of Forward Contracts', subtopics: [{title: 'Forward Rates and FRA', time: 31}, {title: 'Forward Rate Agreements', time: 30}] },
+                { title: 'Topic 71: Pricing and Valuation of Futures Contracts', subtopics: [{title: 'PVBP and Convexity Bias', time: 32}] },
+                { title: 'Topic 72: Pricing and Valuation of Interest Rate Swaps', subtopics: [{title: 'Swaps: Introduction', time: 24}, {title: 'Swaps: Price, Payoff, Value, and Terms', time: 50}, {title: 'Swaps and FRA', time: 14}, {title: 'Swaps Recap', time: 15}] },
+                { title: 'Topic 73: Options', subtopics: [{title: 'Futures and Options', time: 37}, {title: 'Options: Introduction', time: 70}, {title: 'Options Sums', time: 51}, {title: 'Option Types', time: 62}, {title: 'Option Buyer vs Seller, Moneyness, IV, TV', time: 53}, {title: 'Payoff, Profit, IV & TV', time: 20}, {title: 'Minimum and Maximum Value', time: 39}, {title: 'American Call: Early Exercise', time: 43}, {title: 'Put–Call Parity (European)', time: 53}, {title: 'Put–Call Forward Parity', time: 35}, {title: 'Time Value of Option', time: 38}, {title: 'Time Value of Option – 2', time: 27}, {title: 'Option Factors', time: 43}] },
+                { title: 'Topic 74: Option Replication Using Put–Call Parity', subtopics: [{title: 'Option Theory for Balance Sheet', time: 54}, {title: 'Put–Call Parity Recap', time: 6}] },
+                { title: 'Topic 75: Valuing Derivatives Using One-Period Binomial Model', subtopics: [{title: 'Binomial Theorem', time: 52}, {title: 'Binomial Model: Hedge Ratio', time: 47}] }
+            ]},
+            {id: 'alt', title: 'Alternative Investments', modules: [
+                { title: 'Topic 76: Alternative Investment Features and Methods', subtopics: [{title: 'How to Study Alternative Investments', time: 5}, {title: 'Introduction to Alternative Investments', time: 60}, {title: 'Forms of Investing', time: 15}, {title: 'Alternative Investment Structures', time: 33}, {title: 'Fee Structures', time: 101}] },
+                { title: 'Topic 77: Alternative Investment Performance and Risk', subtopics: [{title: 'Alternative Investment Risks', time: 31}, {title: 'Return Calculation: Alternative Investments', time: 12}] },
+                { title: 'Topic 78: Investments in Private Capital Private Equity and Private Debt', subtopics: [{title: 'Private Capital and Private Equity', time: 63}, {title: 'Private Equity: Exit Strategies', time: 44}, {title: 'Private Debt', time: 56}] },
+                { title: 'Topic 79: Real Estate and Infrastructure', subtopics: [{title: 'Types of Real Estate', time: 46}, {title: 'Real Estate: Direct and Indirect Investments', time: 66}, {title: 'Infrastructure', time: 43}] },
+                { title: 'Topic 80: Natural Resources', subtopics: [{title: 'Raw Land, Timberland, and Farmland', time: 36}, {title: 'Commodity Valuation', time: 30}, {title: 'Commodity Prices and Investments', time: 36}, {title: 'Commodity Valuation – 2', time: 24}] },
+                { title: 'Topic 81: Hedge Funds', subtopics: [{title: 'Hedge Fund Strategies', time: 75}, {title: 'Characteristics of Hedge Funds', time: 40}, {title: 'Investment Forms: Hedge Funds', time: 25}, {title: 'Funds of Funds, Hedge Fund Risk & Return', time: 58}] },
+                { title: 'Topic 82: Introduction to Digital Assets', subtopics: [{title: 'Introduction to Digital Assets', time: 28}, {title: 'Distributed Ledger & Financial Applications', time: 50}, {title: 'Digital Asset Categories', time: 64}, {title: 'Digital Asset Characteristics', time: 33}, {title: 'Digital Asset Exchanges', time: 31}, {title: 'Digital Asset Investment Forms', time: 52}, {title: 'Summary: Introduction to Digital Assets', time: 12}] }
+            ]},
+            {id: 'port', title: 'Portfolio Management', modules: [
+                { title: 'Topic 83: Portfolio Risk and Return', subtopics: [{title: 'Risk–Return Calculations', time: 80}, {title: 'Portfolio Risk Sums', time: 16}, {title: 'Portfolio Risk: Change in Correlation', time: 34}, {title: 'Risk-Averse, Risk-Neutral, Risk-Seeking', time: 9}, {title: 'Portfolio Risk: n Identical Assets', time: 22}, {title: 'Sums: n Identical Assets', time: 3}, {title: 'Portfolio SD Across Correlation', time: 30}, {title: 'Efficient Frontier', time: 35}, {title: 'Capital Allocation Line (CAL)', time: 53}, {title: 'Utility Function', time: 33}, {title: 'Major Asset Classes', time: 19}, {title: 'Excel Regression Beta Exercise', time: 20}, {title: 'Excel Regression Beta Exercise – 2', time: 19}] },
+                { title: 'Topic 84: Portfolio Risk and Return – Part 2', subtopics: [{title: 'Capital Market Line (CML)', time: 52}, {title: 'Systematic and Unsystematic Risk', time: 37}, {title: 'Beta and Security Market Line (SML)', time: 40}, {title: 'CAPM', time: 52}, {title: 'Comparing CAL, CML, CL, SML', time: 30}, {title: 'Sharpe, M², Treynor, Jensen', time: 13}, {title: 'Return-Generating Models', time: 40}] },
+                { title: 'Topic 85: Portfolio Management – An Overview', subtopics: [{title: 'Steps in Portfolio Management', time: 31}, {title: 'Types of Investors', time: 40}, {title: 'Asset Management Industry', time: 40}, {title: 'Pooled Investments', time: 81}, {title: 'Diversification Ratio', time: 27}] },
+                { title: 'Topic 86: Basics of Portfolio Planning and Construction', subtopics: [{title: 'Introduction to Portfolio Planning & Construction', time: 3}, {title: 'Investment Policy Statement (IPS)', time: 31}, {title: 'Risk and Return Objectives', time: 45}, {title: 'IPS Constraints', time: 64}, {title: 'Asset Classes and ESG', time: 78}] },
+                { title: 'Topic 87: Behavioral Biases of Individuals', subtopics: [{title: 'Introduction to Behavioral Biases', time: 35}, {title: 'Cognitive Bias: Belief Perseverance', time: 59}, {title: 'Cognitive Information Processing', time: 41}, {title: 'Emotional Biases', time: 29}, {title: 'Emotional Biases – 2', time: 17}, {title: 'Market Characteristics', time: 28}] },
+                { title: 'Topic 88: Introduction to Risk Management', subtopics: [{title: 'Introduction to Risk Management', time: 3}, {title: 'Risk Management', time: 28}, {title: 'Financial and Non-Financial Risk', time: 46}, {title: 'Risk Governance', time: 45}, {title: 'VaR and CVaR', time: 31}, {title: 'Measuring and Modifying Risk', time: 42}] }
+            ]},
+            {id: 'ethics', title: 'Ethics', modules: [
+                { title: 'Topic 89: Ethics and Trust in the Investment Profession', subtopics: [{title: 'Intro to Ethics and Trust in the Investment Profession', time: 3}, {title: 'Ethics and Trust', time: 52}, {title: 'Ethics and Trust – 2', time: 50}] },
+                { title: 'Topic 90: Ethics Standards and Guidance', subtopics: [{title: 'Ethics - Standards and Guidance - Intro', time: 10}, {title: 'Ethics - Standards and Guidance - 1', time: 23}, {title: 'Ethics - Standards and Guidance - 2', time: 25}, {title: 'Buy Side, Sell Side and Client', time: 46}, {title: 'Ethics - Standards and Guidance - 3', time: 63}, {title: 'Ethics - Standards and Guidance - 4', time: 38}, {title: 'Ethics - Standards and Guidance - 5', time: 23}, {title: 'Ethics - Standards and Guidance - 6', time: 61}, {title: 'Ethics - Standards and Guidance - 7', time: 31}, {title: 'Ethics - Standards and Guidance - 8', time: 45}, {title: 'Ethics - Standards and Guidance - 9', time: 25}, {title: 'Ethics - Standards and Guidance - 10', time: 30}, {title: 'Ethics - Standards and Guidance - 11', time: 49}, {title: 'Ethics - Standards and Guidance - 12', time: 23}, {title: 'Ethics - Standards and Guidance - 13', time: 38}, {title: 'Ethics - Standards and Guidance - 14', time: 23}, {title: 'Ethics - Standards and Guidance - 15', time: 36}, {title: 'Ethics - Standards and Guidance - 16', time: 42}, {title: 'Ethics - Standards and Guidance - 17', time: 36}, {title: 'Ethics - Standards and Guidance - 18', time: 8}, {title: 'Ethics - Standards and Guidance - 19', time: 44}, {title: 'Ethics - Standards and Guidance - 20', time: 33}, {title: 'Ethics - Standards and Guidance - 21', time: 29}, {title: 'Ethics - Standards and Guidance - 22', time: 27}, {title: 'Ethics - Standards and Guidance - 23', time: 22}] },
+                { title: 'Topic 92: Introduction to Global Investment (GIPS)', subtopics: [{title: 'Intro to Global Investment', time: 2}, {title: 'Overview of GIPS', time: 39}, {title: 'GIPS - Composites', time: 33}, {title: 'GIPS Standards, Verification', time: 46}] },
+                { title: 'Topic 93: Ethics Application', subtopics: [{title: 'Intro to Ethics Application', time: 4}, {title: 'Ethics Application Standard - 1', time: 71}, {title: 'Ethics Application Standard - 2', time: 13}, {title: 'Ethics Application Standard - 3', time: 67}, {title: 'Ethics Application Standard - 4', time: 50}, {title: 'Ethics Application Standard - 5', time: 20}, {title: 'Ethics Application Standard - 6', time: 25}, {title: 'Ethics Application Standard - 7', time: 10}] }
+            ]}
+        ];
+
+        // --- HELPER FUNCTIONS ---
+        const formatTime = (totalMinutes) => {
+            const h = Math.floor(totalMinutes / 60);
+            const m = totalMinutes % 60;
+            if (h === 0) return `${m}m`;
+            if (m === 0) return `${h}h`;
+            return `${h}h ${m}m`;
+        };
+
+        const getRank = (xp) => {
+            for (let i = RANKS.length - 1; i >= 0; i--) {
+                if (xp >= RANKS[i].minXP) return { ...RANKS[i], next: RANKS[i+1] || null };
+            }
+            return { ...RANKS[0], next: RANKS[1] };
+        };
+
+        const getMultiplier = (streak) => {
+            if (streak >= 7) return 1.5;
+            if (streak >= 4) return 1.2;
+            return 1.0;
+        };
+
+        const App = () => {
+            const [user, setUser] = useState(null);
+            const [currentView, setCurrentView] = useState('calendar'); 
+            const [currentDate, setCurrentDate] = useState(new Date()); 
+            const [selectedDate, setSelectedDate] = useState(null); 
+            const [completedTasks, setCompletedTasks] = useState({}); 
+            const [userXP, setUserXP] = useState(0);
+            const [streakData, setStreakData] = useState({ current: 0, lastActive: null });
+            const [syllabusProgress, setSyllabusProgress] = useState({}); 
+            const [expandedTopics, setExpandedTopics] = useState({});
+
+            const currentRank = useMemo(() => getRank(userXP), [userXP]);
+            const currentMultiplier = useMemo(() => getMultiplier(streakData.current), [streakData.current]);
+
+            // --- AUTH ---
+            useEffect(() => {
+                const unsubscribe = auth.onAuthStateChanged((u) => {
+                    setUser(u);
+                });
+                return () => unsubscribe();
+            }, []);
+
+            // --- DATA SYNC ---
+            useEffect(() => {
+                if (!user) return;
+                
+                // Progress
+                const progressUnsub = db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('quest_data').doc('progress')
+                    .onSnapshot((doc) => {
+                        if (doc.exists) {
+                            const data = doc.data();
+                            setCompletedTasks(data.tasks || {});
+                            setUserXP(data.xp || 0);
+                            setStreakData(data.streak || { current: 0, lastActive: null });
+                        }
+                    });
+
+                // Syllabus
+                const syllabusUnsub = db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('quest_data').doc('syllabus_tracker')
+                    .onSnapshot((doc) => {
+                        if (doc.exists) {
+                            setSyllabusProgress(doc.data().progress || {});
+                        }
+                    });
+
+                return () => { progressUnsub(); syllabusUnsub(); };
+            }, [user]);
+
+            // --- ACTIONS ---
+            const handleGoogleLogin = async () => {
+                if (window.location.protocol === 'file:') {
+                    alert("Google Login requires this app to be on a web server (http/https). It does not work on local files.\n\nPlease host this file (e.g. Vercel) or use Guest Mode.");
+                    return;
+                }
+                const provider = new firebase.auth.GoogleAuthProvider();
+                try {
+                    await auth.signInWithPopup(provider);
+                } catch (error) {
+                    console.error("Login failed", error);
+                    alert("Login failed: " + error.message);
+                }
+            };
+
+            const handleGuestLogin = async () => {
+                try {
+                    await auth.signInAnonymously();
+                } catch (error) {
+                    console.error("Guest login failed", error);
+                    alert("Guest login failed: " + error.message);
+                }
+            };
+
+            const saveProgress = async (newTasks, newXP, newStreak) => {
+                if (!user) return;
+                await db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('quest_data').doc('progress')
+                    .set({ tasks: newTasks, xp: newXP, streak: newStreak, lastUpdated: new Date().toISOString() }, { merge: true });
+            };
+
+            const saveSyllabusProgress = async (newProgress) => {
+                if (!user) return;
+                await db.collection('artifacts').doc(appId).collection('users').doc(user.uid).collection('quest_data').doc('syllabus_tracker')
+                    .set({ progress: newProgress, lastUpdated: new Date().toISOString() }, { merge: true });
+            };
+
+            const toggleTask = (dateStr, task) => {
+                const key = `${dateStr}-${task.id}`;
+                const isComplete = !!completedTasks[key];
+                const newCompleted = { ...completedTasks, [key]: !isComplete };
+                setCompletedTasks(newCompleted);
+                
+                const today = new Date().toISOString().split('T')[0];
+                let newStreak = { ...streakData };
+                
+                if (dateStr === today && !isComplete) {
+                    if (newStreak.lastActive !== today) {
+                        const yesterday = new Date();
+                        yesterday.setDate(yesterday.getDate() - 1);
+                        const yesterdayStr = yesterday.toISOString().split('T')[0];
+                        if (newStreak.lastActive === yesterdayStr) newStreak.current += 1;
+                        else newStreak.current = 1;
+                        newStreak.lastActive = today;
+                    }
+                }
+
+                const multiplier = getMultiplier(newStreak.current);
+                let xpChange = task.xp * multiplier;
+                let newXP = isComplete ? Math.max(0, Math.floor(userXP - xpChange)) : Math.floor(userXP + xpChange);
+                
+                setUserXP(newXP);
+                setStreakData(newStreak);
+                saveProgress(newCompleted, newXP, newStreak);
+            };
+
+            const toggleSyllabusItem = (topicId, moduleIndex, subtopicIndex) => {
+                const key = `${topicId}-${moduleIndex}-${subtopicIndex}`;
+                const newProgress = { ...syllabusProgress, [key]: !syllabusProgress[key] };
+                setSyllabusProgress(newProgress);
+                saveSyllabusProgress(newProgress);
+            };
+
+            const toggleTopicExpand = (topicId) => {
+                setExpandedTopics(prev => ({...prev, [topicId]: !prev[topicId]}));
+            };
+
+            // --- HELPERS ---
+            const isWeekend = (date) => date.getDay() === 0 || date.getDay() === 6;
+            const formatDateKey = (date) => date ? date.toISOString().split('T')[0] : '';
+            
+            const getTasksForDate = (date) => {
+                const isWknd = isWeekend(date);
+                return [
+                    { id: 'cfa', title: 'CFA Level 1 Prep', duration: isWknd ? '12 Hours' : '3 Hours', xp: isWknd ? 1200 : 300, icon: <Icons.BookOpen className="w-4 h-4" /> },
+                    { id: 'cat', title: 'CAT Preparation', duration: '2 Hours', xp: 200, icon: <Icons.Brain className="w-4 h-4" /> },
+                    { id: 'aeon1', title: 'Read: Aeon Article 1', duration: '30 Mins', xp: 50, icon: <Icons.Newspaper className="w-4 h-4" /> },
+                    { id: 'aeon2', title: 'Read: Aeon Article 2', duration: '30 Mins', xp: 50, icon: <Icons.Newspaper className="w-4 h-4" /> },
+                    { id: 'wsj1', title: 'Read: WSJ Article 1', duration: '30 Mins', xp: 50, icon: <Icons.Newspaper className="w-4 h-4" /> },
+                    { id: 'wsj2', title: 'Read: WSJ Article 2', duration: '30 Mins', xp: 50, icon: <Icons.Newspaper className="w-4 h-4" /> },
+                    { id: 'walk', title: 'Walk & Talk', duration: '1 Hour', xp: 100, icon: <Icons.Footprints className="w-4 h-4" /> },
+                ];
+            };
+
+            const syllabusStats = useMemo(() => {
+                let totalSubtopics = 0, completedSubtopics = 0, totalTime = 0;
+                const topicStats = CFA_SYLLABUS.map(topic => {
+                    let tSubtopics = 0, tCompleted = 0, topicTime = 0;
+                    const modulesWithStats = topic.modules.map((mod, modIdx) => {
+                        let mTime = 0;
+                        mod.subtopics.forEach((sub, subIdx) => {
+                            mTime += sub.time;
+                            if (syllabusProgress[`${topic.id}-${modIdx}-${subIdx}`]) { tCompleted++; completedSubtopics++; }
+                        });
+                        tSubtopics += mod.subtopics.length;
+                        totalSubtopics += mod.subtopics.length;
+                        topicTime += mTime;
+                        return { ...mod, time: mTime };
+                    });
+                    totalTime += topicTime;
+                    return { ...topic, completed: tCompleted, total: tSubtopics, percent: tSubtopics === 0 ? 0 : (tCompleted/tSubtopics)*100, time: topicTime, modules: modulesWithStats };
+                });
+                return { totalSubtopics, completedSubtopics, totalTime: formatTime(totalTime), globalPercent: totalSubtopics === 0 ? 0 : (completedSubtopics / totalSubtopics) * 100, topicStats };
+            }, [syllabusProgress]);
+
+            const generateCalendarDays = () => {
+                const year = currentDate.getFullYear(), month = currentDate.getMonth();
+                const lastDay = new Date(year, month + 1, 0);
+                const days = [];
+                for (let i = 0; i < (new Date(year, month, 1).getDay() + 6) % 7; i++) days.push(null);
+                for (let i = 1; i <= lastDay.getDate(); i++) days.push(new Date(year, month, i));
+                return days;
+            };
+
+            const getProgressForDay = (date) => {
+                if (!date) return 0;
+                const tasks = getTasksForDate(date);
+                let completedCount = 0;
+                tasks.forEach(t => { if (completedTasks[`${formatDateKey(date)}-${t.id}`]) completedCount++; });
+                return (completedCount / tasks.length) * 100;
+            };
+
+            // --- LOGIN SCREEN ---
+            if (!user) {
+                return (
+                    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
+                        <div className="text-center mb-8">
+                            <h1 className="text-4xl font-bold text-white mb-2 flex items-center justify-center gap-3">
+                                <Icons.Trophy className="text-yellow-500 w-10 h-10" />
+                                Mastery Quest
+                            </h1>
+                            <p className="text-slate-400">Sync your progress across all devices.</p>
+                        </div>
+                        <div className="flex flex-col gap-4 w-full max-w-xs">
+                            <button 
+                                onClick={handleGoogleLogin}
+                                className="flex items-center justify-center gap-3 bg-white text-slate-900 px-6 py-3 rounded-xl font-bold hover:bg-slate-200 transition-colors shadow-lg shadow-white/10"
+                            >
+                                <Icons.Google className="w-5 h-5" />
+                                Sign in with Google
+                            </button>
+                            <button 
+                                onClick={handleGuestLogin}
+                                className="flex items-center justify-center gap-3 bg-slate-800 text-slate-300 px-6 py-3 rounded-xl font-bold hover:bg-slate-700 transition-colors border border-slate-700"
+                            >
+                                <Icons.Guest className="w-5 h-5" />
+                                Continue as Guest
+                            </button>
+                        </div>
+                        <p className="mt-8 text-xs text-slate-600 max-w-xs text-center">
+                            Note: Google Sign-In requires a hosted site (e.g. Vercel). Use Guest Mode for local files.
+                        </p>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="flex flex-col lg:flex-row min-h-screen bg-slate-950 text-slate-200 font-sans selection:bg-emerald-500/30">
+                    <div className="w-full lg:w-80 bg-slate-950 border-r border-slate-900 p-6 flex flex-col gap-6 shrink-0 overflow-y-auto">
+                        <div>
+                            <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2"><Icons.Trophy className="text-yellow-500" />The Mastery Quest</h1>
+                            <p className="text-slate-500 text-xs mt-1">Protocol Active • Jan 14 Start</p>
+                        </div>
+                        <div className="flex bg-slate-900 p-1 rounded-xl">
+                            <button onClick={() => setCurrentView('calendar')} className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${currentView === 'calendar' ? 'bg-slate-800 text-white shadow' : 'text-slate-400 hover:text-white'}`}>Calendar</button>
+                            <button onClick={() => setCurrentView('syllabus')} className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${currentView === 'syllabus' ? 'bg-slate-800 text-white shadow' : 'text-slate-400 hover:text-white'}`}>Syllabus</button>
+                        </div>
+                        <div className={`rounded-xl p-5 border ${currentRank.border} ${currentRank.bg}/10 relative overflow-hidden`}>
+                            <div className="relative z-10">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div><span className={`text-xs font-bold uppercase tracking-wider ${currentRank.color}`}>Current Rank</span><h3 className="text-2xl font-black text-white mt-1">{currentRank.name}</h3></div>
+                                    <Icons.Crown size={32} className={currentRank.color} />
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-xs text-slate-400"><span>{userXP.toLocaleString()} XP</span><span>{currentRank.next ? currentRank.next.minXP.toLocaleString() : 'MAX'} XP</span></div>
+                                    <div className="w-full bg-slate-900/50 h-2 rounded-full overflow-hidden"><div className={`${currentRank.bg} h-full transition-all duration-500`} style={{ width: currentRank.next ? `${((userXP - currentRank.minXP) / (currentRank.next.minXP - currentRank.minXP)) * 100}%` : '100%' }}></div></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex flex-col items-center justify-center"><Icons.Zap className={`w-6 h-6 mb-2 ${streakData.current >= 4 ? 'text-yellow-400 fill-yellow-400' : 'text-slate-600'}`} /><div className="text-xl font-bold text-white">x{currentMultiplier.toFixed(1)}</div><div className="text-[10px] text-slate-500 uppercase font-bold">Multiplier</div></div>
+                            <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl flex flex-col items-center justify-center"><div className="flex gap-1 mb-2"><Icons.Heart className="w-4 h-4 text-rose-500 fill-rose-500" /><Icons.Heart className="w-4 h-4 text-rose-500 fill-rose-500" /><Icons.Heart className="w-4 h-4 text-rose-500 fill-rose-500" /></div><div className="text-xl font-bold text-white">100%</div><div className="text-[10px] text-slate-500 uppercase font-bold">Health</div></div>
+                        </div>
+                        {/* Sign Out Button */}
+                        <button onClick={() => auth.signOut()} className="text-xs text-slate-500 hover:text-white transition-colors mt-auto pt-4 border-t border-slate-900">
+                            Sign Out
+                        </button>
+                    </div>
+                    
+                    <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
+                        {currentView === 'calendar' ? (
+                            <>
+                                <div className="flex justify-between items-center mb-8">
+                                    <h2 className="text-3xl font-light text-white">{currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</h2>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className="p-2 hover:bg-slate-800 rounded-lg transition-colors text-slate-400 hover:text-white">Previous</button>
+                                        <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className="p-2 hover:bg-slate-800 rounded-lg transition-colors text-slate-400 hover:text-white">Next</button>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-7 gap-2 mb-8">
+                                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => <div key={day} className="text-center text-slate-500 text-sm font-medium py-2 uppercase tracking-wide">{day}</div>)}
+                                    {generateCalendarDays().map((day, idx) => {
+                                        if (!day) return <div key={`empty-${idx}`} className="h-24 sm:h-32 bg-slate-900/30 rounded-xl border border-transparent"></div>;
+                                        const dateStr = formatDateKey(day);
+                                        const progress = getProgressForDay(day);
+                                        const isSelected = selectedDate && formatDateKey(selectedDate) === dateStr;
+                                        return (
+                                            <div key={dateStr} onClick={() => day >= START_DATE && setSelectedDate(day)} className={`relative h-24 sm:h-32 rounded-xl border p-3 cursor-pointer transition-all duration-200 group ${isSelected ? 'ring-2 ring-emerald-500 bg-slate-800 border-slate-700' : 'bg-slate-900 border-slate-800 hover:border-slate-600'} ${day < START_DATE ? 'opacity-30 cursor-not-allowed grayscale' : ''}`}>
+                                                <div className="flex justify-between items-start"><span className={`text-lg font-medium ${formatDateKey(new Date()) === dateStr ? 'text-emerald-400' : 'text-slate-300'}`}>{day.getDate()}</span>{formatDateKey(START_DATE) === dateStr && <span className="text-[10px] bg-indigo-500 text-white px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">Start</span>}</div>
+                                                {day >= START_DATE && <div className="absolute bottom-3 left-3 right-3"><div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden"><div className={`h-full rounded-full transition-all duration-500 ${progress === 100 ? 'bg-emerald-400' : 'bg-blue-500'}`} style={{ width: `${progress}%` }} /></div></div>}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </>
+                        ) : (
+                            <div className="max-w-5xl mx-auto space-y-8 pb-12">
+                                <div className="bg-gradient-to-br from-indigo-900 to-slate-900 rounded-3xl p-8 border border-indigo-500/20 shadow-2xl relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 p-12 opacity-10"><Icons.Target size={200} className="text-white" /></div>
+                                    <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8">
+                                        <div>
+                                            <h2 className="text-3xl font-bold text-white mb-2">CFA Syllabus Dashboard</h2>
+                                            <div className="mt-6 flex gap-8">
+                                                <div><div className="text-3xl font-bold text-white">{syllabusStats.completedSubtopics}</div><div className="text-xs uppercase tracking-wide text-indigo-300">Videos Done</div></div>
+                                                <div><div className="text-3xl font-bold text-slate-400">{syllabusStats.totalSubtopics}</div><div className="text-xs uppercase tracking-wide text-slate-500">Total Videos</div></div>
+                                                <div><div className="text-3xl font-bold text-emerald-400">{syllabusStats.totalTime}</div><div className="text-xs uppercase tracking-wide text-emerald-500/70">Content Length</div></div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center justify-center w-40 h-40 relative">
+                                            <svg className="w-full h-full transform -rotate-90"><circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="12" fill="transparent" className="text-slate-800" /><circle cx="80" cy="80" r="70" stroke="currentColor" strokeWidth="12" fill="transparent" strokeDasharray={440} strokeDashoffset={440 - (440 * syllabusStats.globalPercent) / 100} className="text-indigo-400 transition-all duration-1000 ease-out" /></svg>
+                                            <div className="absolute inset-0 flex items-center justify-center"><span className="text-3xl font-bold text-white">{Math.round(syllabusStats.globalPercent)}%</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="space-y-4">
+                                    {syllabusStats.topicStats.map((topic) => (
+                                        <div key={topic.id} className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden transition-all duration-300">
+                                            <div onClick={() => setExpandedTopics(p => ({...p, [topic.id]: !p[topic.id]}))} className="p-5 flex items-center justify-between cursor-pointer hover:bg-slate-800/50">
+                                                <div className="flex items-center gap-4 flex-1">
+                                                    <div className={`p-2 rounded-lg ${topic.percent === 100 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>{topic.percent === 100 ? <Icons.CheckCircle size={24} /> : <Icons.BookOpen size={24} />}</div>
+                                                    <div><h3 className="text-lg font-semibold text-white">{topic.title}</h3><div className="flex items-center gap-3 mt-1.5"><div className="w-32 h-1.5 bg-slate-800 rounded-full overflow-hidden"><div className="h-full bg-indigo-500 rounded-full transition-all" style={{ width: `${topic.percent}%` }} /></div><span className="text-xs text-slate-600">• {formatTime(topic.time)}</span></div></div>
+                                                </div>
+                                                <div className="text-slate-500">{expandedTopics[topic.id] ? <Icons.ChevronDown size={20} /> : <Icons.ChevronRight size={20} />}</div>
+                                            </div>
+                                            {expandedTopics[topic.id] && <div className="bg-slate-950/50 border-t border-slate-800 p-6 space-y-8">
+                                                {topic.modules.map((module, modIdx) => {
+                                                    const mid = Math.ceil(module.subtopics.length / 2);
+                                                    return (
+                                                        <div key={modIdx}>
+                                                            <div className="flex justify-between items-center text-slate-200 font-semibold pb-3 mb-3 border-b border-slate-800/50"><h4>{module.title}</h4><span className="text-xs text-slate-500 bg-slate-900 px-2 py-1 rounded border border-slate-800">{formatTime(module.time)}</span></div>
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                                                                <div className="flex flex-col gap-1">{module.subtopics.slice(0, mid).map((sub, i) => { const realIdx = i; const isChecked = !!syllabusProgress[`${topic.id}-${modIdx}-${realIdx}`]; return <div key={realIdx} onClick={() => toggleSyllabusItem(topic.id, modIdx, realIdx)} className={`flex items-center gap-3 p-2 rounded hover:bg-slate-800/50 cursor-pointer group transition-colors ${isChecked ? 'opacity-50' : ''}`}><div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${isChecked ? 'bg-indigo-500 border-indigo-500' : 'border-slate-600 group-hover:border-slate-500'}`}>{isChecked && <Icons.CheckCircle size={10} className="text-white" />}</div><div className="flex-1 min-w-0"><div className={`text-sm flex justify-between ${isChecked ? 'text-indigo-200 line-through' : 'text-slate-300'}`}><span className="truncate mr-2"><span className="text-slate-500 font-mono mr-2">{realIdx + 1}.</span>{sub.title}</span><span className="text-xs text-slate-500 whitespace-nowrap">{sub.time}m</span></div></div></div> })}</div>
+                                                                <div className="flex flex-col gap-1">{module.subtopics.slice(mid).map((sub, i) => { const realIdx = mid + i; const isChecked = !!syllabusProgress[`${topic.id}-${modIdx}-${realIdx}`]; return <div key={realIdx} onClick={() => toggleSyllabusItem(topic.id, modIdx, realIdx)} className={`flex items-center gap-3 p-2 rounded hover:bg-slate-800/50 cursor-pointer group transition-colors ${isChecked ? 'opacity-50' : ''}`}><div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${isChecked ? 'bg-indigo-500 border-indigo-500' : 'border-slate-600 group-hover:border-slate-500'}`}>{isChecked && <Icons.CheckCircle size={10} className="text-white" />}</div><div className="flex-1 min-w-0"><div className={`text-sm flex justify-between ${isChecked ? 'text-indigo-200 line-through' : 'text-slate-300'}`}><span className="truncate mr-2"><span className="text-slate-500 font-mono mr-2">{realIdx + 1}.</span>{sub.title}</span><span className="text-xs text-slate-500 whitespace-nowrap">{sub.time}m</span></div></div></div> })}</div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        {selectedDate && currentView === 'calendar' && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedDate(null)}>
+                                <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl transform transition-all" onClick={e => e.stopPropagation()}>
+                                    <div className="flex justify-between items-start mb-6">
+                                        <div><h3 className="text-2xl font-bold text-white">{selectedDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}</h3><p className="text-slate-400 text-sm mt-1">{isWeekend(selectedDate) ? 'Weekend Protocol Active' : 'Standard Weekday Protocol'}</p></div>
+                                        <button onClick={() => setSelectedDate(null)} className="text-slate-500 hover:text-white transition-colors"><Icons.X size={24} /></button>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {getTasksForDate(selectedDate).map(task => {
+                                            const dateStr = formatDateKey(selectedDate);
+                                            const isDone = completedTasks[`${dateStr}-${task.id}`];
+                                            return (
+                                                <div key={task.id} onClick={() => toggleTask(dateStr, task)} className={`group flex items-center justify-between p-4 rounded-xl border cursor-pointer transition-all duration-200 ${isDone ? 'bg-emerald-500/10 border-emerald-500/50' : 'bg-slate-800 border-slate-700 hover:border-slate-500 hover:bg-slate-800/80'}`}>
+                                                    <div className="flex items-center gap-4"><div className={`p-2 rounded-lg transition-colors ${isDone ? 'bg-emerald-500 text-white' : 'bg-slate-700 text-slate-400 group-hover:text-white'}`}>{task.icon}</div><div><h4 className={`font-medium ${isDone ? 'text-emerald-400' : 'text-slate-200'}`}>{task.title}</h4><span className="text-xs text-slate-500">{task.duration} • <span className="text-yellow-500">+{Math.floor(task.xp * currentMultiplier)} XP</span></span></div></div>
+                                                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${isDone ? 'bg-emerald-500 border-emerald-500' : 'border-slate-600 group-hover:border-slate-400'}`}>{isDone && <Icons.CheckCircle size={14} className="text-white" />}</div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
