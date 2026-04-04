@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CFA Level 1 — Progress Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0c0c0e;
+    --surface: #131316;
+    --surface2: #1a1a1f;
+    --surface3: #222228;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8e6df;
+    --text2: #8a8880;
+    --text3: #555450;
+    --gold: #c9a84c;
+    --gold2: #e8c97a;
+    --gold-dim: rgba(201,168,76,0.12);
+    --gold-dim2: rgba(201,168,76,0.06);
+    --check: #c9a84c;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 400;
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  /* Subtle grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  .layout {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    min-height: 100vh;
+  }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 36px 24px;
+    gap: 32px;
+  }
+
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+  .brand {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .brand-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+  .brand-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.2;
+  }
+
+  /* Global ring */
+  .global-ring {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 24px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .ring-wrap { position: relative; width: 120px; height: 120px; }
+  .ring-wrap svg { transform: rotate(-90deg); }
+  .ring-center {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .ring-pct {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1;
+  }
+  .ring-label {
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  .global-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+  .stat-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .stat-val {
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    color: var(--gold2);
+    font-weight: 600;
+  }
+  .stat-key {
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* Topic nav */
+  .nav-label {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text3);
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 6px;
+  }
+  .nav-list { display: flex; flex-direction: column; gap: 2px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    border: 1px solid transparent;
+  }
+  .nav-item:hover { background: var(--surface2); }
+  .nav-item.active {
+    background: var(--gold-dim);
+    border-color: rgba(201,168,76,0.2);
+  }
+  .nav-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--surface3);
+    border: 1.5px solid var(--border2);
+    flex-shrink: 0;
+    transition: background 0.2s, border-color 0.2s;
+  }
+  .nav-item.active .nav-dot { background: var(--gold); border-color: var(--gold); }
+  .nav-item.done .nav-dot { background: var(--gold); border-color: var(--gold); }
+  .nav-name {
+    font-size: 13px;
+    color: var(--text2);
+    flex: 1;
+    transition: color 0.15s;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .nav-item.active .nav-name { color: var(--gold2); }
+  .nav-pct {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+  }
+  .nav-item.active .nav-pct { color: var(--gold); }
+
+  /* ── MAIN ── */
+  .main {
+    padding: 48px 48px 80px;
+    overflow-y: auto;
+    height: 100vh; /* FIX: constrain main so scroll works properly */
+  }
+  .main::-webkit-scrollbar { width: 6px; }
+  .main::-webkit-scrollbar-track { background: transparent; }
+  .main::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+  /* Topic header */
+  .topic-header {
+    margin-bottom: 40px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--border);
+  }
+  .topic-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+  .topic-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 16px;
+    line-height: 1.2;
+  }
+  .topic-meta {
+    display: flex; gap: 24px; flex-wrap: wrap;
+  }
+  .topic-meta-item {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px; color: var(--text2);
+  }
+  .topic-meta-item strong { color: var(--text); font-weight: 500; }
+
+  /* Topic progress bar */
+  .topic-progress-bar {
+    margin-top: 20px;
+    height: 3px;
+    background: var(--surface3);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .topic-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), var(--gold2));
+    border-radius: 99px;
+    transition: width 0.4s ease;
+  }
+
+  /* Module */
+  .module {
+    margin-bottom: 36px;
+  }
+  .module-header {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .module-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    flex: 1;
+  }
+  .module-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--gold);
+    background: var(--gold-dim);
+    border: 1px solid rgba(201,168,76,0.2);
+    padding: 2px 8px;
+    border-radius: 99px;
+    white-space: nowrap; /* FIX: prevent badge text wrapping */
+  }
+  .module-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    white-space: nowrap; /* FIX: prevent time text wrapping */
+  }
+  .module-chevron {
+    width: 16px; height: 16px;
+    color: var(--text3);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  /* FIX: chevron rotation lives on .module-header now, not .module */
+  .module.collapsed .module-header .module-chevron { transform: rotate(-90deg); }
+
+  .module-bar {
+    height: 2px;
+    background: var(--surface3);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .module-bar-fill {
+    height: 100%;
+    background: var(--gold);
+    border-radius: 99px;
+    transition: width 0.3s ease;
+    opacity: 0.6;
+  }
+
+  /* FIX: hide the progress bar when module is collapsed */
+  .module.collapsed .module-bar {
+    display: none;
+  }
+
+  /* Accordion */
+  .module-body {
+    overflow: hidden;
+    transition: max-height 0.35s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease;
+    max-height: 4000px; /* FIX: increased from 2000px to handle large modules */
+    opacity: 1;
+  }
+  .module.collapsed .module-body {
+    max-height: 0;
+    opacity: 0;
+  }
+
+  /* Subtopic grid */
+  .subtopics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    padding-bottom: 4px;
+  }
+  @media (max-width: 900px) { .subtopics { grid-template-columns: 1fr; } }
+
+  .sub-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+    user-select: none;
+  }
+  .sub-item:hover { background: var(--surface2); border-color: var(--border2); }
+  .sub-item.done {
+    background: var(--gold-dim2);
+    border-color: rgba(201,168,76,0.15);
+  }
+  .sub-item.done .sub-title { color: var(--text3); text-decoration: line-through; text-decoration-color: var(--text3); }
+
+  .check-box {
+    width: 16px; height: 16px;
+    border-radius: 4px;
+    border: 1.5px solid var(--border2);
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .sub-item.done .check-box {
+    background: var(--gold);
+    border-color: var(--gold);
+  }
+  .check-icon { display: none; }
+  .sub-item.done .check-icon { display: block; }
+
+  .sub-title {
+    font-size: 12.5px;
+    color: var(--text2);
+    flex: 1;
+    line-height: 1.4;
+    transition: color 0.15s;
+  }
+  .sub-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    white-space: nowrap;
+  }
+
+  /* All-done state */
+  .done-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--gold-dim);
+    border: 1px solid rgba(201,168,76,0.3);
+    color: var(--gold2);
+    font-size: 11px;
+    font-weight: 500;
+    padding: 3px 10px;
+    border-radius: 99px;
+    letter-spacing: 0.04em;
+  }
+
+  /* Mark-all button */
+  .mark-all-btn {
+    background: none;
+    border: 1px solid rgba(201,168,76,0.25);
+    color: var(--gold);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 99px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .mark-all-btn:hover {
+    background: var(--gold-dim);
+    border-color: rgba(201,168,76,0.5);
+  }
+  .mark-all-btn.undo {
+    color: var(--text3);
+    border-color: var(--border2);
+  }
+  .mark-all-btn.undo:hover {
+    background: var(--surface2);
+    color: var(--text2);
+    border-color: var(--border2);
+  }
+
+  /* Reset btn */
+  .reset-btn {
+    background: none;
+    border: 1px solid var(--border2);
+    color: var(--text3);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+    margin-top: auto;
+  }
+  .reset-btn:hover { color: var(--text); border-color: var(--text2); }
+
+  @media (max-width: 768px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { position: static; height: auto; }
+    .main { padding: 24px 20px 60px; height: auto; }
+  }
+</style>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+</head>
+<body>
+<div class="layout">
+
+<aside class="sidebar">
+  <div class="brand">
+    <span class="brand-label">Progress Tracker</span>
+    <span class="brand-title">CFA Level 1</span>
+  </div>
+
+  <div class="global-ring">
+    <div class="ring-wrap">
+      <svg width="120" height="120" viewBox="0 0 120 120">
+        <circle cx="60" cy="60" r="50" fill="none" stroke="#1a1a1f" stroke-width="10"/>
+        <circle id="global-ring-fill" cx="60" cy="60" r="50" fill="none"
+          stroke="#c9a84c" stroke-width="10"
+          stroke-linecap="round"
+          stroke-dasharray="314"
+          stroke-dashoffset="314"
+          style="transition: stroke-dashoffset 0.6s ease"/>
+      </svg>
+      <div class="ring-center">
+        <span class="ring-pct" id="global-pct">0%</span>
+        <span class="ring-label">Complete</span>
+      </div>
+    </div>
+    <div class="global-stats">
+      <div class="stat-box">
+        <span class="stat-val" id="stat-done">0</span>
+        <span class="stat-key">Done</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-val" id="stat-total">0</span>
+        <span class="stat-key">Total</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-val" id="stat-done-time">0h</span>
+        <span class="stat-key">Hours Done</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-val" id="stat-time">0h</span>
+        <span class="stat-key">Total Length</span>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="nav-label">Subjects</div>
+    <div class="nav-list" id="nav-list"></div>
+  </div>
+
+  <div id="sync-status" style="display:flex;align-items:center;font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;"></div>
+  <button class="reset-btn" onclick="resetAll()">↺ Reset all progress</button>
+</aside>
+
+<main class="main" id="main-content"></main>
+
+</div>
+
+<script>
+const SYLLABUS = [
+  {id:'quant',title:'Quantitative Methods',modules:[
+    {title:'Topic 1: Time Value of Money',subtopics:[{t:'TVM – 1',m:42},{t:'TVM – 2',m:60},{t:'Cash Flow & Ordinary Annuity',m:39},{t:'Annuity Due',m:52},{t:'Unequal CF & Perpetuity',m:38},{t:'Compounding Frequency & Effective Rates',m:80},{t:'Bond',m:30},{t:'Loan Amortization – 1',m:73},{t:'Loan Amortization – 2',m:7},{t:'Continuous Rates – 1',m:62},{t:'Continuous Rates – 2',m:45},{t:'Equivalent Rate',m:11},{t:'Perpetuity Sum',m:27},{t:'Interest & Annuity Factors',m:5},{t:'Growth & Retirement Sum',m:41},{t:'Cash Flow Additivity',m:9},{t:'MWROR & TWROR',m:42},{t:'Returns: Gross, Net, Leveraged',m:23}]},
+    {title:'Topic 2: TVM in Finance',subtopics:[{t:'Annualized Rate Clarification',m:3}]},
+    {title:'Topic 3: Statistical Measures',subtopics:[{t:'Measures of Central Tendency – 1',m:46},{t:'Measures of Central Tendency – 2',m:35},{t:'AM, GM, HM, IRR vs GM',m:80},{t:'GM Difficult Sum',m:10},{t:'Skewness & Kurtosis',m:57},{t:'Covariance & Correlation',m:53},{t:'Data Types',m:28},{t:'Weights & Frequency',m:13},{t:'Tackling Outliers',m:11},{t:'Downside Deviation',m:28},{t:'Frequency Distribution',m:42},{t:'Quartile/Decile/Percentile',m:22},{t:'Interpolation',m:29},{t:'Contingency Table',m:20}]},
+    {title:'Topic 4: Probability',subtopics:[{t:'Probability Concepts',m:63},{t:'Expected Value Formula',m:33},{t:'Expected Value Sums',m:38},{t:'Portfolio Variance',m:70},{t:'Conditional EV & Counting',m:40},{t:'Probability Tree',m:10}]},
+    {title:'Topic 5: Portfolio Mathematics',subtopics:[{t:'Probability Concepts',m:62},{t:'EV from Probability Table',m:30},{t:"Roy's Safety First Criterion",m:34}]},
+    {title:'Topic 6: Probability Distributions',subtopics:[{t:'Distributions – 1',m:36},{t:'Probability Functions',m:22},{t:'Binomial – 1',m:32},{t:'Binomial – 2',m:24},{t:'Normal Distribution – 1',m:35},{t:'Standard Normal',m:51},{t:'Confidence Interval',m:57},{t:'Z Table',m:29},{t:'Lognormal – 1',m:51},{t:'Lognormal – 2',m:18},{t:'Normal Distribution – 2',m:20},{t:'Sharpe Ratio',m:40},{t:'Sensitivity / Scenario / Stress',m:34},{t:'Monte Carlo Simulation',m:29},{t:'Chi-Square & F',m:9},{t:'IID Returns',m:18}]},
+    {title:'Topic 7: Sampling Estimation & Inference',subtopics:[{t:'Point Estimation & CI',m:52},{t:'Sampling',m:70},{t:'Sampling Distribution',m:54},{t:'T Table',m:25},{t:'Z vs T',m:20},{t:'CLT & Good Estimator',m:41},{t:'SD vs SE',m:13},{t:'Sample Correlation',m:3},{t:'Bootstrap & Jackknife',m:33}]},
+    {title:'Topic 8: Hypothesis Testing',subtopics:[{t:'Intro',m:40},{t:'One-Tail / Two-Tail',m:25},{t:'HT Sums – 1',m:38},{t:'HT Sums – 2',m:43},{t:'Steps & Types',m:31},{t:'Variance Test',m:30},{t:'Equality of Variance',m:30},{t:'Dependent Sample',m:26},{t:'Independent Sample – 1',m:32},{t:'Independent Sample – 2',m:24},{t:'P-Value',m:37},{t:'P-Value Sums',m:45},{t:'Type I & II Error, Power',m:35},{t:'Statistical vs Economic Significance',m:6},{t:'Adjusted Significance',m:24},{t:'T Distribution',m:64}]},
+    {title:'Topic 9: Correlation Tests',subtopics:[{t:'Test of Correlation',m:36},{t:'Spearman Rank',m:26},{t:'Contingency Table',m:35}]},
+    {title:'Topic 10: Simple Linear Regression',subtopics:[{t:'Correlation & Covariance',m:23},{t:'OLS & Coefficients',m:46},{t:'SSR, SSE, TSS, R²',m:27},{t:'Assumptions',m:30},{t:'T Tests',m:40},{t:'ANOVA',m:47},{t:'Predicted Value',m:12},{t:'Functional Forms',m:20}]},
+    {title:'Topic 11: Big Data Techniques',subtopics:[{t:'Fintech in IM – 1',m:60},{t:'Fintech in IM – 2',m:49}]}
+  ]},
+  {id:'econ',title:'Economics',modules:[
+    {title:'Topic 00: Introduction to Economics',subtopics:[{t:'How to Study Economics',m:9},{t:'Intro to Economics',m:2}]},
+    {title:'Topic 12: The Firm & Market Structures',subtopics:[{t:'Shutdown Point, LRATC',m:75},{t:'Market Structures',m:40},{t:'N-Firm Concentration & HHI',m:51},{t:'Monopolistic Competition',m:45},{t:'Price & Market Structures',m:3},{t:'Oligopoly: Kinked Demand Curve',m:32},{t:'Nash Equilibrium',m:39},{t:'Cournot, Stackelberg, Dominant Firm',m:34},{t:'Summary',m:9}]},
+    {title:'Topic 13: Understanding Business Cycles',subtopics:[{t:'Business Cycles',m:65},{t:'Credit Cycles',m:13},{t:'Resource Use Fluctuations',m:60},{t:'Economic Indicators',m:26},{t:'Unemployment',m:30},{t:'Inflation',m:21}]},
+    {title:'Topic 14: Fiscal Policy',subtopics:[{t:'Monetary vs Fiscal Policy',m:32},{t:'Objectives & Debt Ratio',m:48},{t:'Fiscal Policy Tools',m:26},{t:'Fiscal Policy Lags',m:48},{t:'Fiscal Multiplier',m:56},{t:'Sum of Multipliers',m:2}]},
+    {title:'Topic 15: Monetary Policy',subtopics:[{t:'Central Bank Rule',m:50},{t:'Monetary Policy Tools',m:37},{t:'Monetary Policy & CB',m:52},{t:'Limitations',m:51},{t:'Interaction with Fiscal Policy',m:24},{t:'Quantity Theory of Money',m:26}]},
+    {title:'Topic 16: Introduction to Geopolitics',subtopics:[{t:'Intro',m:3},{t:'Geopolitics – 1',m:47},{t:'Geopolitical Risk',m:53},{t:'Tools & Organizations',m:40}]},
+    {title:'Topic 17: International Trade',subtopics:[{t:'Trading Blocs',m:28},{t:'Trade Basics',m:40},{t:'Costs vs Benefits',m:45},{t:'Tariff & Quota',m:39},{t:'Deadweight Loss',m:3},{t:'Trade Restrictions',m:50}]},
+    {title:'Topic 18: Capital Flows & FX Market',subtopics:[{t:'Exchange Rate Regimes',m:51},{t:'Real Exchange Rate',m:51},{t:'Real Exchange Rate – II',m:47},{t:'Capital Restrictions',m:17},{t:'FX Market',m:12},{t:'Changes in Exchange Rates',m:29}]},
+    {title:'Topic 19: Exchange Rate Calculations',subtopics:[{t:'Exchange Rate Foundations',m:84},{t:'Currency Forward Rate',m:36},{t:'Currency Forward Arbitrage',m:54},{t:'Forward % & Points',m:55},{t:'Forward Sums',m:15},{t:'Forward Rate Formula',m:3}]},
+    {title:'Topic 20: Agg. Output Prices & Growth',subtopics:[{t:'GDP, GNP, Real vs Nominal',m:68},{t:'Growth – 1',m:37},{t:'Growth – 2',m:45},{t:'IS–LM, AD–AS, GDP Graphs',m:70},{t:'Shifts in AD & AS',m:34},{t:'Growth – 3',m:66},{t:'Growth – 4',m:44}]},
+    {title:'Topic 21: Currency Exchange Rates',subtopics:[{t:'Currency Basics',m:70}]},
+    {title:'Topic 22: Demand & Supply Analysis',subtopics:[{t:'Demand, Supply, Elasticity',m:50},{t:'Elasticity Sums',m:7},{t:'Factors of Production',m:39},{t:'Price Discrimination',m:5},{t:'Elasticity & Total Revenue',m:3}]},
+    {title:'Topic 23: Intro to the Firm & Market',subtopics:[{t:'Product Cost: Total, Avg, Marginal',m:30},{t:'Accounting vs Economic Profit',m:30},{t:'AVC, AR, MR, MC',m:56}]}
+  ]},
+  {id:'fsa',title:'Financial Statement Analysis',modules:[
+    {title:'Topic 00: Introduction to FSA',subtopics:[{t:'Introduction to Financial Statement Analysis',m:22}]},
+    {title:'Topic 27: FSA Framework & Reporting',subtopics:[{t:'How to Study FSA: Core vs Prerequisites',m:2},{t:'Financial Reporting vs Financial Statement Analysis',m:25},{t:'Financial Statements, MD&A, Notes – 1',m:35},{t:'Audit Opinion',m:40},{t:'IFRS, US GAAP, SEC',m:52},{t:'FSA Assumptions',m:2},{t:'Information Sources, SEC Filings',m:38},{t:'Segment Reporting',m:17}]},
+    {title:'Topic 28: Income Statements & Balance Sheets',subtopics:[{t:'AA, E, L, ACC, RUED, Prepaid',m:47},{t:'Income Statement – 1',m:80},{t:'Income Statement Details – 1',m:30},{t:'Minority Interest – 1',m:25},{t:'Stock Split, Dividend, Rights Shares',m:67},{t:'Basic EPS',m:50},{t:'Diluted EPS',m:32},{t:'Diluted EPS – 2',m:94},{t:'Assets: Current, Tangible, Intangible',m:37},{t:'Depreciation, Amortization & Depletion',m:30},{t:'Depreciation – 1',m:60},{t:'Revenue Recognition',m:45},{t:'Revenue Recognition Methods',m:52},{t:'Expensing',m:55},{t:'Receivables, Warranty & Inventory',m:35},{t:'Capitalizing vs Expensing (Ratios)',m:26},{t:'Capitalizing vs Expensing – Sum 1',m:6},{t:'Capitalizing vs Expensing – Sum 2',m:66},{t:'Capitalized Interest',m:31},{t:'Non-Recurring Items',m:20},{t:'Research & Development Costs',m:34},{t:'Changes in Accounting Policies',m:45},{t:"Changes in Shareholders' Equity",m:14}]},
+    {title:'Topic 29: Analyzing Balance Sheets',subtopics:[{t:'Assets, Intangible Assets & R&D',m:45},{t:'Long-Term Financial Liabilities',m:12},{t:'Goodwill Summary',m:15},{t:'Financial Instruments Accounting',m:62}]},
+    {title:'Topic 30: Cash Flow Statements – 1',subtopics:[{t:'Introduction to Cash Flow Statements',m:35},{t:'Cash Flow Calculations',m:43},{t:'Cash Flow Statement – 1',m:39},{t:'Cash Flow Statements – Sum 1',m:53},{t:'CFO Indirect Method',m:60},{t:'Cash Flow Statement Analysis – 1',m:18},{t:'Indirect Method to Direct Method',m:25}]},
+    {title:'Topic 31: Cash Flow Statements – 2',subtopics:[{t:'CFO, FCFF & FCFE',m:62},{t:'Cash Flow Statements – Sum 2',m:23},{t:'Cash Flow Ratios',m:22}]},
+    {title:'Topic 32: Analysis of Inventories',subtopics:[{t:'Inventory & COGS',m:21},{t:'Inventory Valuation Methods',m:62},{t:'FIFO, LIFO Impact',m:31},{t:'LIFO Reserve',m:43},{t:'LIFO Liquidation',m:28},{t:'Inventory Measurement (IFRS vs US GAAP)',m:50},{t:'Inventory Disclosures',m:40},{t:'Inventory Sum – 1',m:30},{t:'Inventory Sum – 2',m:15}]},
+    {title:'Topic 33: Analysis of Long-Term Assets',subtopics:[{t:'Intangible Asset Creation',m:46},{t:'Impairment Loss',m:76},{t:'Long-Term Asset Disclosures',m:30},{t:'Derecognition & Spin-Offs',m:32}]},
+    {title:'Topic 34: Long-Term Liabilities & Equity',subtopics:[{t:'Introduction to Leases',m:36},{t:'Lease Accounting',m:75},{t:'Lease Accounting Ratios',m:55},{t:'Lessor Accounting',m:33},{t:'Lessor Accounting – 2',m:26},{t:'Lessor Accounting Revision',m:7},{t:'Share-Based Compensation',m:57},{t:'Long-Term Liabilities',m:24},{t:'Pension Plans: DCP & DBP',m:77}]},
+    {title:'Topic 35: Analysis of Income Taxes',subtopics:[{t:'Introduction to Income Taxes & DDL',m:60},{t:'Deferred Tax Assets & Permanent Differences',m:43},{t:'DTA, DTL & Differences',m:50},{t:'Carrying Value vs Tax Base',m:32},{t:'DTA, DTL & Changes in Tax',m:47},{t:'Income Tax Expense',m:24},{t:'Valuation Analysis of DTA & DTL',m:41},{t:'DTA, DTL – Sums',m:32},{t:'Tax Rates & Disclosures',m:36},{t:'Income Tax Disclosures',m:19}]},
+    {title:'Topic 36: Financial Reporting Quality',subtopics:[{t:'Financial Reporting Quality',m:59},{t:'Low-Quality Reports: Reasons',m:27},{t:'Regulators & GAAP Measures',m:23},{t:'Choices and Warning Signs',m:56}]},
+    {title:'Topic 37: Financial Analysis Techniques',subtopics:[{t:'Ratios',m:25},{t:'Profitability Ratios',m:48},{t:'Activity Ratios',m:69},{t:'Liquidity Ratios',m:46},{t:'Solvency Ratios',m:48},{t:'DuPont Analysis',m:37},{t:'Financial Analysis Techniques',m:46},{t:'Pro Forma Financial Statements',m:11},{t:'Relationship Among Ratios',m:10},{t:'Industry-Specific Ratios',m:32}]},
+    {title:'Topic 38: Introduction to Financial Modeling',subtopics:[{t:'Introduction to Financial Modeling',m:34},{t:'Financial Modeling & Forecasting',m:46},{t:'Analyst Forecast Horizon',m:55},{t:'Analyst Forecast Behavioral Factors',m:46},{t:'Summary: Intro to Financial Statements Modeling',m:10}]}
+  ]},
+  {id:'corp',title:'Corporate Issuers',modules:[
+    {title:'Topic 24: Org Forms & Corporate Governance',subtopics:[{t:'Org Forms Corporate Issuers Features',m:3},{t:'Introduction to Corporate Governance – 1',m:15},{t:'Introduction to Corporate Governance – 2',m:9},{t:'Introduction to Corporate Governance – 3',m:17},{t:'Corporate Governance (Bonus)',m:2}]},
+    {title:'Topic 25: Working Capital and Liquidity',subtopics:[{t:'Working Capital and Liquidity – 1',m:7},{t:'Working Capital and Liquidity – 2',m:5}]},
+    {title:'Topic 26: Capital Investments & Structure',subtopics:[{t:'NPV and IRR',m:90},{t:'Real Options',m:22},{t:'Capital Investments – 1',m:20},{t:'Capital Investments – 2',m:17},{t:'Capital Investments – 3',m:15},{t:'Capital Investments – 4',m:15},{t:'Capital Investments – 5',m:8},{t:'Capital Structure – 1',m:10},{t:'Capital Structure – 2',m:2},{t:'Business Models – 1',m:29},{t:'Business Models – 2',m:40}]}
+  ]},
+  {id:'equity',title:'Equity Investments',modules:[
+    {title:'Topic 39: Market Organization and Structure',subtopics:[{t:'Introduction to Market Organization',m:3},{t:'Financial System and Assets',m:35},{t:'Financial Intermediaries',m:57},{t:'Positions, Short Sales, Leveraged Positions',m:60},{t:'Margin Calls (Stocks)',m:46},{t:'Market Orders and Instructions',m:78},{t:'Primary and Secondary Markets',m:48},{t:'Market Structures and Regulators',m:50}]},
+    {title:'Topic 40: Security Market Indexes',subtopics:[{t:'Security Market Indexes',m:60},{t:'Index Calculations',m:41},{t:'Stock Split Impact on Index Calculation',m:62},{t:'Comparing All Indexes',m:37},{t:'Rebalancing, Reconstitution, Uses of Indexes',m:47},{t:'Equity, Fixed Income and Alternative Indexes',m:64}]},
+    {title:'Topic 41: Market Efficiency',subtopics:[{t:'Forms of Market Efficiency',m:68},{t:'Factors Affecting Market Efficiency',m:65},{t:'Market Anomalies',m:77},{t:'Behavioral Finance and Anomalies',m:31}]},
+    {title:'Topic 42: Overview of Equity Securities',subtopics:[{t:'Types of Equity and Preference Shares',m:60},{t:'Equity Risk and Return',m:34},{t:'GDR and ADR',m:54},{t:'Public and Private Equity Securities',m:13},{t:'ROE, P/B, Ke vs ER',m:40},{t:'Fair Value vs Intrinsic Value',m:4}]},
+    {title:'Topic 43: Company Analysis – Past and Present',subtopics:[{t:'Research Reports',m:51},{t:'Business Model and Information',m:26},{t:'Revenue Drivers and Pricing Power',m:60},{t:'DOL, DFL, DTL',m:102},{t:'Summary: Company Analysis',m:9}]},
+    {title:'Topic 44: Industry and Competitive Analysis',subtopics:[{t:'Industry Analysis and Equity Research',m:56},{t:'Industry Classification',m:15},{t:'Industry Size, Growth, Profitability and Trends',m:46},{t:"Porter's Five Forces",m:60},{t:'PESTLE Analysis',m:30},{t:'Competitive Strategy',m:48},{t:'Industry and Competitive Analysis',m:31},{t:'Summary of Industry and Competitive Analysis',m:10}]},
+    {title:'Topic 45: Company Analysis – Forecasting',subtopics:[{t:'Forecasting Objectives',m:33},{t:'Forecast Approaches',m:47},{t:'Top-Down Revenue Forecasting',m:45},{t:'Bottom-Up, Recurring and Non-Recurring Items',m:36},{t:'COGS, SG&A Expenses, Working Capital',m:45},{t:'Forecasting Capex, Capital Investments, etc.',m:26}]},
+    {title:'Topic 46: Equity Valuation Concepts and Basic Models',subtopics:[{t:'Introduction to Equity Valuation Concepts',m:3},{t:'Dividend Formulas',m:36},{t:'Ex-Dividend and Cum-Dividend',m:27},{t:'Dividends, Stock Splits, Share Repurchases',m:63},{t:'Gross Merchandise Value',m:4},{t:'Valuation Models – Introduction',m:22},{t:'Dividend Discount Model',m:24},{t:'Gordon Growth Model',m:30},{t:'Growth Rate Estimation',m:44},{t:'Multi-Stage Dividend Growth Model',m:43},{t:'Valuing Preferred Stock',m:24},{t:'Implied Growth Rate',m:24},{t:'Multiple-Based Valuation',m:78},{t:'Justified Multiples',m:46},{t:'EBITDA Valuation Model',m:53},{t:'Asset-Based Valuation Model',m:23},{t:'Free Cash Flow Based Valuation',m:33},{t:'Valuation Models: Summary',m:55}]}
+  ]},
+  {id:'fixed',title:'Fixed Income',modules:[
+    {title:'Topic 47: Fixed Income Instrument Features',subtopics:[{t:'Fixed Income Instrument Features – 1',m:60},{t:'Bond Indenture and Covenants',m:36}]},
+    {title:'Topic 48: Fixed Income Cash Flows and Types',subtopics:[{t:'Cash Flow Structures (FI – 1)',m:38},{t:'Coupon Structures – 1',m:53},{t:'Fixed Income Contingency Provisions – 1',m:36},{t:'Fixed Income Contingency Provisions – 2',m:35},{t:'Domestic and International Bonds',m:45},{t:'Taxation of Bond Income',m:28}]},
+    {title:'Topic 49: Fixed Income Issuance and Trading',subtopics:[{t:'Fixed Income Market Segments',m:50},{t:'Fixed Income Indexes',m:23},{t:'Primary and Secondary Fixed Income Markets',m:37}]},
+    {title:'Topic 50: Fixed Income Markets – Corporate Issues',subtopics:[{t:'Short-Term Funding: Non-Financial Corporations',m:40},{t:'Short-Term Funding',m:21},{t:'Repurchase Agreements',m:90},{t:'Long-Term Funding',m:20}]},
+    {title:'Topic 51: Fixed Income Markets – Government Issues',subtopics:[{t:'Sovereign Debt',m:47},{t:'Sovereign and Non-Sovereign Debt',m:60},{t:'Issuance of Government Bonds',m:48}]},
+    {title:'Topics 52–53: Fixed Income Valuation',subtopics:[{t:'Bond Pricing',m:51},{t:'Price–Yield Curve',m:55},{t:'Bond Amortization',m:31},{t:'YTM, Semi-Annual, Value vs Price',m:37},{t:'Full Price vs Flat Price',m:60},{t:'Zero-Coupon Bonds and STRIPS',m:52},{t:'Spot Rates',m:77},{t:'Calculating Forward Rates',m:42},{t:'Forward Rates – Sum 1',m:24},{t:'Calculating Spot and Bond Prices from Forward Rates',m:29},{t:'Bootstrapping Spot Rates',m:13},{t:'Par Rates',m:44},{t:'Yield Curves',m:29},{t:'Reinvesting Coupons',m:16},{t:'Matrix Pricing',m:23},{t:'Spreads',m:30},{t:'OAS, CB, PB',m:22},{t:'Yield Measures (OAP, OAY)',m:54},{t:'Issuer of a Callable Bond',m:2},{t:'Simple Yield',m:5}]},
+    {title:'Topic 54: Yield and Spread Measures (Floating Rate)',subtopics:[{t:'Floating Rate Note Yields',m:90},{t:'Money Market Yields',m:35}]},
+    {title:'Topics 55–57: Fixed Income Risk and Return',subtopics:[{t:'Reinvestment Rate Risk vs YTM',m:27},{t:'Duration and Modified Duration',m:64},{t:'Duration – Zero Coupon Bonds',m:38},{t:'Effective Duration and Effective Convexity',m:80},{t:'Effective Duration & Convexity – Sums',m:38},{t:'Callable and Putable Bonds',m:44},{t:'Long vs Short Duration',m:4},{t:'Modified Duration',m:18},{t:'Duration Factors',m:22},{t:'Portfolio Duration',m:33},{t:'PVBP',m:20},{t:'Dollar Duration',m:10},{t:'Term Structure of Yield Volatility',m:12},{t:'Duration & Convexity Recap',m:18},{t:'Recap',m:2},{t:'Difference Between Duration Measures',m:12},{t:'Positive vs Negative Reinvestment Risk',m:2}]},
+    {title:'Topic 58: Bond Convexity and Portfolio Convexity',subtopics:[{t:'Convexity – Approximate and Effective',m:48},{t:'Money Convexity and Portfolio Convexity',m:32}]},
+    {title:'Topic 59: Curve-Based and Empirical Risk Measures',subtopics:[{t:'Key Rate Duration',m:65},{t:'Empirical and Analytical Duration',m:33}]},
+    {title:'Topic 60: Credit Risk',subtopics:[{t:'Credit Risk – Introduction',m:39},{t:'Credit Risk in Debt Instruments',m:29},{t:'Measuring Credit Risk',m:47},{t:'Credit Ratings',m:50},{t:'Credit Spread Risk',m:9},{t:'Credit Spread Risk – 2',m:63}]},
+    {title:'Topic 61: Credit Analysis for Government Issuers',subtopics:[{t:'Sovereign Government Debt',m:30},{t:'Non-Sovereign Government Debt',m:32}]},
+    {title:'Topic 62: Credit Analysis for Corporate Issuers',subtopics:[{t:'Corporate Issuers: Credit Analysis Factors',m:33},{t:'Credit Analysis Financial Ratios',m:41},{t:'Credit Analysis Seniority Rankings',m:50},{t:'Notching and Low-Rated Issuers',m:5}]},
+    {title:'Topic 63: Fixed Income Securitization',subtopics:[{t:'Asset Securitization',m:80},{t:'Securitization: Parties and Roles',m:38},{t:'Securitization Process, Benefits and Risks',m:30}]},
+    {title:'Topic 64: Asset-Backed Security Instruments',subtopics:[{t:'Covered Bonds',m:23},{t:'Credit Enhancement in Securitization',m:40},{t:'Non-Mortgage Asset-Backed Securities',m:45},{t:'Collateralized Debt Obligations (CDOs)',m:31}]},
+    {title:'Topic 65: Mortgage-Backed Security Instruments',subtopics:[{t:'Prepayment Risk and Time Tranching',m:34},{t:'Residential MBS (RMBS)',m:39},{t:'Commercial MBS (CMBS)',m:43},{t:'Mortgage Pass-Through Securities',m:28},{t:'Collateralized Mortgage Obligations (CMOs)',m:53}]}
+  ]},
+  {id:'deriv',title:'Derivatives',modules:[
+    {title:'Topics 66–67: Forwards and Futures',subtopics:[{t:'Derivatives Introduction',m:80},{t:'Forward Contracts',m:32},{t:'Futures Contracts',m:37},{t:'Initial, Maintenance, Variation Margin',m:64},{t:'Open Interest and Volume',m:25},{t:'Cash-and-Carry Arbitrage',m:44},{t:'Reverse Cash-and-Carry Arbitrage',m:70},{t:'Forward Price Formula',m:46},{t:'Pricing Forwards',m:50},{t:'Mark-to-Rate (MRR)',m:22},{t:'Forward Rate Agreements (FRA)',m:49},{t:'Synthetic FRA',m:30},{t:'FRA Recap',m:10},{t:'Futures Pricing',m:28}]},
+    {title:'Topic 68: Derivative Instruments & Management',subtopics:[{t:'Hedging and Underlying',m:22},{t:'Exchange-Traded Derivatives',m:46}]},
+    {title:'Topic 69: Derivative Benefits, Risks and Issuers',subtopics:[{t:'Advantages, Risks, and Uses',m:81}]},
+    {title:'Topic 70: Pricing & Valuation of Forward Contracts',subtopics:[{t:'Forward Rates and FRA',m:31},{t:'Forward Rate Agreements',m:30}]},
+    {title:'Topic 71: Pricing & Valuation of Futures Contracts',subtopics:[{t:'PVBP and Convexity Bias',m:32}]},
+    {title:'Topic 72: Pricing & Valuation of Interest Rate Swaps',subtopics:[{t:'Swaps: Introduction',m:24},{t:'Swaps: Price, Payoff, Value, and Terms',m:50},{t:'Swaps and FRA',m:14},{t:'Swaps Recap',m:15}]},
+    {title:'Topic 73: Options',subtopics:[{t:'Futures and Options',m:37},{t:'Options: Introduction',m:70},{t:'Options Sums',m:51},{t:'Option Types',m:62},{t:'Option Buyer vs Seller, Moneyness, IV, TV',m:53},{t:'Payoff, Profit, IV & TV',m:20},{t:'Minimum and Maximum Value',m:39},{t:'American Call: Early Exercise',m:43},{t:'Put–Call Parity (European)',m:53},{t:'Put–Call Forward Parity',m:35},{t:'Time Value of Option',m:38},{t:'Time Value of Option – 2',m:27},{t:'Option Factors',m:43}]},
+    {title:'Topic 74: Option Replication Using Put–Call Parity',subtopics:[{t:'Option Theory for Balance Sheet',m:54},{t:'Put–Call Parity Recap',m:6}]},
+    {title:'Topic 75: Valuing Derivatives – Binomial Model',subtopics:[{t:'Binomial Theorem',m:52},{t:'Binomial Model: Hedge Ratio',m:47}]}
+  ]},
+  {id:'alt',title:'Alternative Investments',modules:[
+    {title:'Topic 76: Alternative Investment Features and Methods',subtopics:[{t:'How to Study Alternative Investments',m:5},{t:'Introduction to Alternative Investments',m:60},{t:'Forms of Investing',m:15},{t:'Alternative Investment Structures',m:33},{t:'Fee Structures',m:101}]},
+    {title:'Topic 77: Alternative Investment Performance and Risk',subtopics:[{t:'Alternative Investment Risks',m:31},{t:'Return Calculation: Alternative Investments',m:12}]},
+    {title:'Topic 78: Private Capital, Private Equity and Debt',subtopics:[{t:'Private Capital and Private Equity',m:63},{t:'Private Equity: Exit Strategies',m:44},{t:'Private Debt',m:56}]},
+    {title:'Topic 79: Real Estate and Infrastructure',subtopics:[{t:'Types of Real Estate',m:46},{t:'Real Estate: Direct and Indirect Investments',m:66},{t:'Infrastructure',m:43}]},
+    {title:'Topic 80: Natural Resources',subtopics:[{t:'Raw Land, Timberland, and Farmland',m:36},{t:'Commodity Valuation',m:30},{t:'Commodity Prices and Investments',m:36},{t:'Commodity Valuation – 2',m:24}]},
+    {title:'Topic 81: Hedge Funds',subtopics:[{t:'Hedge Fund Strategies',m:75},{t:'Characteristics of Hedge Funds',m:40},{t:'Investment Forms: Hedge Funds',m:25},{t:'Funds of Funds, Hedge Fund Risk & Return',m:58}]},
+    {title:'Topic 82: Introduction to Digital Assets',subtopics:[{t:'Introduction to Digital Assets',m:28},{t:'Distributed Ledger & Financial Applications',m:50},{t:'Digital Asset Categories',m:64},{t:'Digital Asset Characteristics',m:33},{t:'Digital Asset Exchanges',m:31},{t:'Digital Asset Investment Forms',m:52},{t:'Summary: Introduction to Digital Assets',m:12}]}
+  ]},
+  {id:'port',title:'Portfolio Management',modules:[
+    {title:'Topic 83: Portfolio Risk and Return – Part 1',subtopics:[{t:'Risk–Return Calculations',m:80},{t:'Portfolio Risk Sums',m:16},{t:'Portfolio Risk: Change in Correlation',m:34},{t:'Risk-Averse, Risk-Neutral, Risk-Seeking',m:9},{t:'Portfolio Risk: n Identical Assets',m:22},{t:'Sums: n Identical Assets',m:3},{t:'Portfolio SD Across Correlation',m:30},{t:'Efficient Frontier',m:35},{t:'Capital Allocation Line (CAL)',m:53},{t:'Utility Function',m:33},{t:'Major Asset Classes',m:19},{t:'Excel Regression Beta Exercise',m:20},{t:'Excel Regression Beta Exercise – 2',m:19}]},
+    {title:'Topic 84: Portfolio Risk and Return – Part 2',subtopics:[{t:'Capital Market Line (CML)',m:52},{t:'Systematic and Unsystematic Risk',m:37},{t:'Beta and Security Market Line (SML)',m:40},{t:'CAPM',m:52},{t:'Comparing CAL, CML, CL, SML',m:30},{t:'Sharpe, M², Treynor, Jensen',m:13},{t:'Return-Generating Models',m:40}]},
+    {title:'Topic 85: Portfolio Management – An Overview',subtopics:[{t:'Steps in Portfolio Management',m:31},{t:'Types of Investors',m:40},{t:'Asset Management Industry',m:40},{t:'Pooled Investments',m:81},{t:'Diversification Ratio',m:27}]},
+    {title:'Topic 86: Portfolio Planning and Construction',subtopics:[{t:'Introduction to Portfolio Planning & Construction',m:3},{t:'Investment Policy Statement (IPS)',m:31},{t:'Risk and Return Objectives',m:45},{t:'IPS Constraints',m:64},{t:'Asset Classes and ESG',m:78}]},
+    {title:'Topic 87: Behavioral Biases of Individuals',subtopics:[{t:'Introduction to Behavioral Biases',m:35},{t:'Cognitive Bias: Belief Perseverance',m:59},{t:'Cognitive Information Processing',m:41},{t:'Emotional Biases',m:29},{t:'Emotional Biases – 2',m:17},{t:'Market Characteristics',m:28}]},
+    {title:'Topic 88: Introduction to Risk Management',subtopics:[{t:'Introduction to Risk Management',m:3},{t:'Risk Management',m:28},{t:'Financial and Non-Financial Risk',m:46},{t:'Risk Governance',m:45},{t:'VaR and CVaR',m:31},{t:'Measuring and Modifying Risk',m:42}]}
+  ]},
+  {id:'ethics',title:'Ethics & Professional Standards',modules:[
+    {title:'Topic 89: Ethics and Trust in the Investment Profession',subtopics:[{t:'Intro to Ethics and Trust',m:3},{t:'Ethics and Trust',m:52},{t:'Ethics and Trust – 2',m:50}]},
+    {title:'Topic 90: Ethics Standards and Guidance',subtopics:[{t:'Ethics - Standards and Guidance - Intro',m:10},{t:'Ethics - Standards and Guidance - 1',m:23},{t:'Ethics - Standards and Guidance - 2',m:25},{t:'Buy Side, Sell Side and Client',m:46},{t:'Ethics - Standards and Guidance - 3',m:63},{t:'Ethics - Standards and Guidance - 4',m:38},{t:'Ethics - Standards and Guidance - 5',m:23},{t:'Ethics - Standards and Guidance - 6',m:61},{t:'Ethics - Standards and Guidance - 7',m:31},{t:'Ethics - Standards and Guidance - 8',m:45},{t:'Ethics - Standards and Guidance - 9',m:25},{t:'Ethics - Standards and Guidance - 10',m:30},{t:'Ethics - Standards and Guidance - 11',m:49},{t:'Ethics - Standards and Guidance - 12',m:23},{t:'Ethics - Standards and Guidance - 13',m:38},{t:'Ethics - Standards and Guidance - 14',m:23},{t:'Ethics - Standards and Guidance - 15',m:36},{t:'Ethics - Standards and Guidance - 16',m:42},{t:'Ethics - Standards and Guidance - 17',m:36},{t:'Ethics - Standards and Guidance - 18',m:8},{t:'Ethics - Standards and Guidance - 19',m:44},{t:'Ethics - Standards and Guidance - 20',m:33},{t:'Ethics - Standards and Guidance - 21',m:29},{t:'Ethics - Standards and Guidance - 22',m:27},{t:'Ethics - Standards and Guidance - 23',m:22}]},
+    {title:'Topic 92: Introduction to Global Investment (GIPS)',subtopics:[{t:'Intro to Global Investment',m:2},{t:'Overview of GIPS',m:39},{t:'GIPS - Composites',m:33},{t:'GIPS Standards, Verification',m:46}]},
+    {title:'Topic 93: Ethics Application',subtopics:[{t:'Intro to Ethics Application',m:4},{t:'Ethics Application Standard - 1',m:71},{t:'Ethics Application Standard - 2',m:13},{t:'Ethics Application Standard - 3',m:67},{t:'Ethics Application Standard - 4',m:50},{t:'Ethics Application Standard - 5',m:20},{t:'Ethics Application Standard - 6',m:25},{t:'Ethics Application Standard - 7',m:10}]}
+  ]}
+];
+
+// ── FIREBASE ──
+const FB_CONFIG = {
+  apiKey: "AIzaSyBV9XnopGLtHorx9rgwmzW_loTserbguds",
+  authDomain: "snake-master-8d658.firebaseapp.com",
+  projectId: "snake-master-8d658",
+  storageBucket: "snake-master-8d658.firebasestorage.app",
+  messagingSenderId: "600223686750",
+  appId: "1:600223686750:web:c6cabb02da3807c24394cf"
+};
+
+// Fixed private document ID — same record on every device for the same owner
+const PRIVATE_DOC_ID = "cfa_owner_a7f3k9";
+
+if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+let DOC_REF = null;
+
+// ── STATE ──
+const STORAGE_KEY = 'cfa_tracker_v1';
+let progress = {};
+let activeTopic = SYLLABUS[0].id;
+let collapsedModules = {};
+let _unsubscribe = null;
+// FIX: track whether a cloud sync is in flight to debounce saves
+let _saveTimer = null;
+
+function setSyncStatus(s) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  const map = {
+    connecting: ['#facc15', 'Connecting…'],
+    synced:     ['#4ade80', 'Synced'],
+    saving:     ['#facc15', 'Saving…'],
+    offline:    ['#f87171', 'Offline — local only']
+  };
+  const [dot, text] = map[s] || map.synced;
+  el.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:'+dot+';display:inline-block;margin-right:5px;flex-shrink:0"></span>'+text;
+}
+
+function loadProgress() {
+  try { progress = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) { progress = {}; }
+}
+
+// FIX: debounced save — batches rapid checkbox clicks into one Firestore write
+function saveProgress() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+  if (!DOC_REF) return;
+  clearTimeout(_saveTimer);
+  setSyncStatus('saving');
+  _saveTimer = setTimeout(async () => {
+    try {
+      // FIX: save the full progress object (not merge:true) so deletions/resets propagate correctly
+      await DOC_REF.set({ progress, updatedAt: new Date().toISOString() });
+      setSyncStatus('synced');
+    } catch(e) {
+      console.warn('Firestore write failed:', e.code, e.message);
+      setSyncStatus('offline');
+    }
+  }, 800);
+}
+
+async function initCloud() {
+  DOC_REF = db.collection('cfa_tracker').doc(PRIVATE_DOC_ID);
+  try {
+    const snap = await DOC_REF.get();
+    if (snap.exists) {
+      const cloud = snap.data().progress || {};
+      // FIX: replace local with cloud entirely (cloud is source of truth on load)
+      // This ensures resets and unchecks from other devices are respected
+      const merged = Object.assign({}, cloud);
+      // Keep any local keys not in cloud (offline changes while other device was used)
+      let changed = false;
+      Object.keys(progress).forEach(k => {
+        if (!(k in merged)) { merged[k] = progress[k]; changed = true; }
+      });
+      progress = merged;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+      if (changed) await saveProgress(); // push locally-only keys up
+      render();
+    } else {
+      // First ever open — push local progress up
+      await DOC_REF.set({ progress, updatedAt: new Date().toISOString() });
+    }
+    setSyncStatus('synced');
+
+    // Live listener: picks up changes from other devices in real time
+    if (_unsubscribe) _unsubscribe();
+    _unsubscribe = DOC_REF.onSnapshot(snap => {
+      if (!snap.exists || snap.metadata.hasPendingWrites) return;
+      const cloud = snap.data().progress || {};
+      // FIX: do a deep equality check rather than key-by-key to catch deleted keys
+      const localStr = JSON.stringify(progress);
+      const cloudStr = JSON.stringify(cloud);
+      if (localStr !== cloudStr) {
+        progress = cloud;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(progress));
+        render();
+      }
+    }, () => setSyncStatus('offline'));
+  } catch(e) {
+    console.warn('Firestore init failed:', e.code, e.message);
+    setSyncStatus('offline');
+  }
+}
+
+function resetAll() {
+  if (!confirm('Reset all progress? This cannot be undone.')) return;
+  progress = {};
+  saveProgress();
+  render();
+}
+
+// ── HELPERS ──
+function fmtTime(mins) {
+  if (!mins || mins === 0) return '0m'; // FIX: explicit zero guard
+  const h = Math.floor(mins / 60), m = mins % 60;
+  if (h === 0) return m + 'm';
+  if (m === 0) return h + 'h';
+  return h + 'h ' + m + 'm';
+}
+
+function getTopicStats(topic) {
+  let total = 0, done = 0, mins = 0;
+  topic.modules.forEach((mod, mi) => {
+    mod.subtopics.forEach((sub, si) => {
+      total++;
+      mins += sub.m;
+      if (progress[`${topic.id}-${mi}-${si}`]) done++;
+    });
+  });
+  return { total, done, mins, pct: total ? Math.round(done / total * 100) : 0 };
+}
+
+function getGlobalStats() {
+  let total = 0, done = 0, mins = 0, doneMins = 0;
+  SYLLABUS.forEach(t => {
+    t.modules.forEach((mod, mi) => {
+      mod.subtopics.forEach((sub, si) => {
+        total++;
+        mins += sub.m;
+        if (progress[`${t.id}-${mi}-${si}`]) { done++; doneMins += sub.m; }
+      });
+    });
+  });
+  return { total, done, mins, doneMins, pct: total ? Math.round(done / total * 100) : 0 };
+}
+
+// ── RENDER ──
+// FIX: split render into sidebar-only and main-only updates to avoid unnecessary
+// scroll resets when only a checkbox is toggled
+function render() {
+  renderSidebar();
+  renderMain();
+}
+
+function renderSidebar() {
+  const g = getGlobalStats();
+  const circ = 314;
+  const offset = circ - (circ * g.pct / 100);
+  document.getElementById('global-ring-fill').setAttribute('stroke-dashoffset', offset);
+  document.getElementById('global-pct').textContent = g.pct + '%';
+  document.getElementById('stat-done').textContent = g.done;
+  document.getElementById('stat-total').textContent = g.total;
+  document.getElementById('stat-done-time').textContent = fmtTime(g.doneMins);
+  document.getElementById('stat-time').textContent = fmtTime(g.mins);
+
+  const nav = document.getElementById('nav-list');
+  nav.innerHTML = SYLLABUS.map(t => {
+    const s = getTopicStats(t);
+    const isActive = t.id === activeTopic;
+    // FIX: only mark done if total > 0 (prevents falsely marking empty topics)
+    const isDone = s.done === s.total && s.total > 0;
+    return `<div class="nav-item${isActive ? ' active' : ''}${isDone ? ' done' : ''}" onclick="setTopic('${t.id}')">
+      <span class="nav-dot"></span>
+      <span class="nav-name">${t.title}</span>
+      <span class="nav-pct">${s.pct}%</span>
+    </div>`;
+  }).join('');
+}
+
+function renderMain() {
+  const topic = SYLLABUS.find(t => t.id === activeTopic);
+  const stats = getTopicStats(topic);
+  const main = document.getElementById('main-content');
+
+  // FIX: preserve scroll position across re-renders (only reset when topic changes)
+  const savedScroll = main.scrollTop;
+
+  const doneBadge = stats.done === stats.total && stats.total > 0
+    ? `<span class="done-badge">✓ Complete</span>` : '';
+
+  let html = `<div class="topic-header">
+    <div class="topic-tag">CFA Level 1 · Subject ${SYLLABUS.findIndex(t => t.id === activeTopic) + 1} of ${SYLLABUS.length}</div>
+    <div class="topic-title">${topic.title}</div>
+    <div class="topic-meta">
+      <span class="topic-meta-item"><strong>${stats.done}</strong>&nbsp;of&nbsp;<strong>${stats.total}</strong>&nbsp;videos done</span>
+      <span class="topic-meta-item"><strong>${fmtTime(stats.mins)}</strong>&nbsp;content</span>
+      <span class="topic-meta-item"><strong>${stats.pct}%</strong>&nbsp;complete</span>
+      ${doneBadge}
+    </div>
+    <div class="topic-progress-bar"><div class="topic-progress-fill" style="width:${stats.pct}%"></div></div>
+  </div>`;
+
+  topic.modules.forEach((mod, mi) => {
+    let modDone = 0, modTotal = mod.subtopics.length, modMins = 0;
+    mod.subtopics.forEach((s, si) => {
+      modMins += s.m;
+      if (progress[`${topic.id}-${mi}-${si}`]) modDone++;
+    });
+    const modPct = modTotal ? Math.round(modDone / modTotal * 100) : 0;
+    // Default collapsed unless explicitly opened
+    const colKey = `${topic.id}-${mi}`;
+    if (!(colKey in collapsedModules)) collapsedModules[colKey] = true;
+    const isCollapsed = !!collapsedModules[colKey];
+    const allDone = modDone === modTotal && modTotal > 0;
+
+    html += `<div class="module${isCollapsed ? ' collapsed' : ''}">
+      <div class="module-header" onclick="toggleModule('${topic.id}',${mi})">
+        <span class="module-title">${mod.title}</span>
+        <span class="module-badge">${allDone ? '✓ Done' : `${modDone}/${modTotal}`}</span>
+        <span class="module-time">${fmtTime(modMins)}</span>
+        <button class="mark-all-btn${allDone ? ' undo' : ''}" onclick="event.stopPropagation();markAllModule('${topic.id}',${mi},${allDone ? 'false' : 'true'})">${allDone ? '↺ Unmark all' : '✓ Mark all'}</button>
+        <svg class="module-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6l4 4 4-4"/></svg>
+      </div>
+      <div class="module-bar"><div class="module-bar-fill" style="width:${modPct}%"></div></div>
+      <div class="module-body">`;
+
+    html += `<div class="subtopics">`;
+    mod.subtopics.forEach((sub, si) => {
+      const key = `${topic.id}-${mi}-${si}`;
+      const isDone = !!progress[key];
+      html += `<div class="sub-item${isDone ? ' done' : ''}" onclick="toggleSub('${key}')">
+        <div class="check-box">
+          <svg class="check-icon" width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <polyline points="1.5,5 4,7.5 8.5,2" stroke="#0c0c0e" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="sub-title">${sub.t}</span>
+        <span class="sub-time">${sub.m}m</span>
+      </div>`;
+    });
+    html += `</div></div></div>`; // subtopics + module-body + module
+  });
+
+  main.innerHTML = html;
+  // FIX: restore scroll position after innerHTML update
+  main.scrollTop = savedScroll;
+}
+
+function setTopic(id) {
+  activeTopic = id;
+  // FIX: reset scroll to top only when the topic actually changes
+  document.getElementById('main-content').scrollTop = 0;
+  render();
+}
+
+function toggleSub(key) {
+  progress[key] = !progress[key];
+  saveProgress();
+  // FIX: update UI efficiently — flip the class on the element directly
+  // instead of a full re-render which resets scroll and causes flicker
+  const el = document.querySelector(`.sub-item[onclick="toggleSub('${CSS.escape(key)}')"]`);
+  if (el) {
+    el.classList.toggle('done', !!progress[key]);
+  }
+  // Still need to update sidebar stats and topic header counts
+  renderSidebar();
+  updateTopicHeader();
+}
+
+// FIX: lightweight header refresh — only updates the counts/progress bar without re-rendering all cards
+function updateTopicHeader() {
+  const topic = SYLLABUS.find(t => t.id === activeTopic);
+  const stats = getTopicStats(topic);
+  // Re-render only the header section
+  const header = document.querySelector('.topic-header');
+  if (!header) return;
+  const doneBadge = stats.done === stats.total && stats.total > 0
+    ? `<span class="done-badge">✓ Complete</span>` : '';
+  header.innerHTML = `
+    <div class="topic-tag">CFA Level 1 · Subject ${SYLLABUS.findIndex(t => t.id === activeTopic) + 1} of ${SYLLABUS.length}</div>
+    <div class="topic-title">${topic.title}</div>
+    <div class="topic-meta">
+      <span class="topic-meta-item"><strong>${stats.done}</strong>&nbsp;of&nbsp;<strong>${stats.total}</strong>&nbsp;videos done</span>
+      <span class="topic-meta-item"><strong>${fmtTime(stats.mins)}</strong>&nbsp;content</span>
+      <span class="topic-meta-item"><strong>${stats.pct}%</strong>&nbsp;complete</span>
+      ${doneBadge}
+    </div>
+    <div class="topic-progress-bar"><div class="topic-progress-fill" style="width:${stats.pct}%"></div></div>`;
+  // Also update module badges for this topic
+  const topic_obj = SYLLABUS.find(t => t.id === activeTopic);
+  const moduleEls = document.querySelectorAll('#main-content .module');
+  topic_obj.modules.forEach((mod, mi) => {
+    let modDone = 0, modTotal = mod.subtopics.length;
+    mod.subtopics.forEach((s, si) => {
+      if (progress[`${activeTopic}-${mi}-${si}`]) modDone++;
+    });
+    const allDone = modDone === modTotal && modTotal > 0;
+    const badge = moduleEls[mi] && moduleEls[mi].querySelector('.module-badge');
+    if (badge) {
+      badge.textContent = allDone ? '✓ Done' : `${modDone}/${modTotal}`;
+    }
+    const markBtn = moduleEls[mi] && moduleEls[mi].querySelector('.mark-all-btn');
+    if (markBtn) {
+      markBtn.textContent = allDone ? '↺ Unmark all' : '✓ Mark all';
+      markBtn.classList.toggle('undo', allDone);
+      markBtn.setAttribute('onclick', `event.stopPropagation();markAllModule('${activeTopic}',${mi},${allDone ? 'false' : 'true'})`);
+    }
+    const barFill = moduleEls[mi] && moduleEls[mi].querySelector('.module-bar-fill');
+    if (barFill) {
+      const modPct = modTotal ? Math.round(modDone / modTotal * 100) : 0;
+      barFill.style.width = modPct + '%';
+    }
+  });
+}
+
+// FIX: toggleModule now only flips the CSS class — no DOM queries with fragile index math
+function toggleModule(topicId, mi) {
+  const key = `${topicId}-${mi}`;
+  collapsedModules[key] = !collapsedModules[key];
+  // Find the exact module element by its position among siblings
+  const moduleEls = document.querySelectorAll('#main-content .module');
+  if (moduleEls[mi]) {
+    moduleEls[mi].classList.toggle('collapsed', !!collapsedModules[key]);
+  }
+}
+
+function markAllModule(topicId, mi, markDone) {
+  const topic = SYLLABUS.find(t => t.id === topicId);
+  if (!topic) return;
+  const mod = topic.modules[mi];
+  if (!mod) return;
+  mod.subtopics.forEach((sub, si) => {
+    const key = `${topicId}-${mi}-${si}`;
+    progress[key] = markDone ? true : false;
+    if (!markDone) delete progress[key];
+  });
+  saveProgress();
+  render();
+}
+
+// ── INIT ──
+loadProgress();
+render();
+setSyncStatus('connecting');
+
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).then(() => {
+  const existing = auth.currentUser;
+  if (existing) return initCloud();
+  return auth.signInAnonymously().then(() => initCloud());
+}).catch(e => {
+  console.warn('Auth failed:', e.code, e.message);
+  setSyncStatus('offline');
+});
+</script>
+</body>
+</html>
