@@ -1,0 +1,1732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CFA Command Center — Master</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=JetBrains+Mono:wght@400;500&family=Instrument+Sans:wght@400;500&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#0e0e10">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="CFA Master">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="data:application/json,{
+  &quot;name&quot;: &quot;CFA Command Center&quot;,
+  &quot;short_name&quot;: &quot;CFA Master&quot;,
+  &quot;start_url&quot;: &quot;.&quot;,
+  &quot;display&quot;: &quot;standalone&quot;,
+  &quot;background_color&quot;: &quot;#080809&quot;,
+  &quot;theme_color&quot;: &quot;#c9a84c&quot;,
+  &quot;orientation&quot;: &quot;portrait&quot;,
+  &quot;icons&quot;: [{
+    &quot;src&quot;: &quot;data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e0e10'/><text y='.9em' font-size='80' x='10'>📊</text></svg>&quot;,
+    &quot;sizes&quot;: &quot;any&quot;,
+    &quot;type&quot;: &quot;image/svg+xml&quot;
+  }]
+}">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080809;--s1:#0e0e10;--s2:#141417;--s3:#1a1a1f;--s4:#222228;--s5:#2a2a32;
+  --bdr:rgba(255,255,255,0.06);--bdr2:rgba(255,255,255,0.1);
+  --txt:#e2e0da;--txt2:#8a8880;--txt3:#4a4845;
+  --gold:#c9a84c;--gold2:#e8c97a;
+  --ga:rgba(201,168,76,0.12);--gb:rgba(201,168,76,0.06);
+  --grn:#4ade80;--gna:rgba(74,222,128,0.1);--gnb:rgba(74,222,128,0.05);
+  --red:#f87171;--rda:rgba(248,113,113,0.1);
+  --blu:#60a5fa;--bla:rgba(96,165,250,0.1);
+  --prp:#a78bfa;--pra:rgba(167,139,250,0.1);
+  --ora:#fb923c;--oraa:rgba(251,146,60,0.08);
+  --r:10px;--rs:6px;--rl:14px;
+  --ff:'Instrument Sans',system-ui,sans-serif;
+  --fm:'JetBrains Mono',monospace;
+  --fd:'Syne',sans-serif;
+}
+html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--ff);font-size:13px;line-height:1.5;overflow:hidden}
+.app{display:grid;grid-template-rows:auto 1fr;height:100vh}
+
+/* TOPBAR */
+.topbar{background:var(--s1);border-bottom:1px solid var(--bdr);display:flex;align-items:center;padding:0 20px;gap:0;flex-shrink:0;overflow-x:auto}
+.brand{font-family:var(--fd);font-size:14px;font-weight:700;color:var(--gold2);padding:14px 20px 14px 0;border-right:1px solid var(--bdr);margin-right:20px;white-space:nowrap;flex-shrink:0}
+.brand span{color:var(--txt3);font-size:10px;font-weight:400;font-family:var(--fm);display:block;letter-spacing:.08em;text-transform:uppercase;margin-top:1px}
+.tabs{display:flex;gap:0;flex:1}
+.tab{padding:16px 16px;font-size:10px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--txt3);cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;font-family:var(--fm);white-space:nowrap}
+.tab:hover{color:var(--txt2)}
+.tab.active{color:var(--gold2);border-bottom-color:var(--gold)}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0;padding-left:12px}
+.chip{font-family:var(--fm);font-size:10px;padding:4px 10px;border-radius:99px;white-space:nowrap}
+.chip-red{background:var(--rda);border:1px solid rgba(248,113,113,0.2);color:var(--red)}
+.chip-gold{background:var(--ga);border:1px solid rgba(201,168,76,0.2);color:var(--gold2)}
+#storage-warn{display:none;font-family:var(--fm);font-size:10px;color:var(--red);background:var(--rda);border:1px solid rgba(248,113,113,0.2);padding:4px 10px;border-radius:99px}
+
+/* PANELS */
+.panels{overflow:hidden;position:relative}
+.panel{position:absolute;inset:0;overflow-y:auto;display:none;padding:20px 20px 80px}
+.panel.active{display:block}
+.panel::-webkit-scrollbar{width:4px}
+.panel::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:4px}
+.sh{font-family:var(--fm);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--txt3);margin:22px 0 10px;display:flex;align-items:center;gap:8px}
+.sh::after{content:'';flex:1;height:1px;background:var(--bdr)}
+
+/* OVERVIEW CARD */
+.ov-card{background:var(--s2);border:1px solid var(--bdr);border-radius:var(--rl);padding:18px 20px;margin-bottom:16px;display:flex;align-items:center;gap:18px}
+.ring-wrap{position:relative;flex-shrink:0}
+.ring-wrap svg{transform:rotate(-90deg);display:block}
+.ring-ctr{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+.ring-num{font-family:var(--fd);font-weight:700;line-height:1}
+.ring-sub{font-family:var(--fm);font-size:9px;color:var(--txt3);letter-spacing:.06em}
+.ov-meta{flex:1;min-width:0}
+.ov-title{font-family:var(--fd);font-size:17px;font-weight:700;color:var(--txt);margin-bottom:4px}
+.ov-sub{font-size:12px;color:var(--txt2);margin-bottom:8px}
+.days-bar{height:3px;background:var(--s5);border-radius:99px;overflow:hidden;margin-bottom:4px}
+.days-fill{height:100%;border-radius:99px}
+.days-label{font-family:var(--fm);font-size:10px;color:var(--txt3)}
+.badge-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.badge{font-family:var(--fm);font-size:10px;padding:3px 9px;border-radius:99px}
+
+/* STAT ROW */
+.stat-row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px}
+.sc{background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r);padding:12px 14px;cursor:pointer;transition:border-color .15s}
+.sc:hover{border-color:var(--bdr2)}
+.sc-emoji{font-size:14px;margin-bottom:4px}
+.sc-val{font-family:var(--fd);font-size:20px;font-weight:700;color:var(--gold2);line-height:1}
+.sc-key{font-size:10px;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;margin-top:3px;font-family:var(--fm)}
+.sc-eta{font-family:var(--fm);font-size:9px;color:var(--txt3);margin-top:4px}
+.sc-prog{height:2px;background:var(--s5);border-radius:99px;overflow:hidden;margin-top:6px}
+.sc-prog-fill{height:100%;border-radius:99px}
+
+/* SUBJECT TREE */
+.subject-block{margin-bottom:5px}
+.subject-hd{background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r);padding:11px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:border-color .15s,background .15s;user-select:none}
+.subject-hd:hover{border-color:var(--bdr2);background:var(--s3)}
+.subject-hd.done-s{border-color:rgba(201,168,76,0.2);background:var(--gb)}
+.subject-hd.active-s{border-color:rgba(96,165,250,0.15);background:var(--bla)}
+.sh-icon{width:26px;height:26px;border-radius:var(--rs);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.sh-info{flex:1;min-width:0}
+.sh-name{font-size:12px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sh-meta{font-size:10px;color:var(--txt3);margin-top:1px;font-family:var(--fm)}
+.sh-prog{height:2px;background:var(--s5);border-radius:99px;overflow:hidden;margin-top:5px}
+.sh-prog-fill{height:100%;border-radius:99px;transition:width .3s}
+.sh-pct{font-family:var(--fm);font-size:11px;color:var(--txt2);flex-shrink:0}
+.chevron{width:13px;height:13px;color:var(--txt3);transition:transform .2s;flex-shrink:0}
+.subject-body{overflow:hidden;max-height:0;transition:max-height .35s cubic-bezier(.4,0,.2,1)}
+.subject-body.open{max-height:99999px}
+.module-list{padding:3px 0 3px 14px;display:flex;flex-direction:column;gap:3px}
+
+/* MODULE */
+.module-block{background:var(--s3);border:1px solid var(--bdr);border-radius:var(--rs);overflow:hidden}
+.module-hd{padding:8px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:background .12s;user-select:none}
+.module-hd:hover{background:var(--s4)}
+.mh-num{font-family:var(--fm);font-size:9px;color:var(--txt3);min-width:28px;flex-shrink:0}
+.mh-name{font-size:11px;font-weight:500;color:var(--txt2);flex:1}
+.mh-badge{font-family:var(--fm);font-size:9px;padding:1px 6px;border-radius:99px;white-space:nowrap}
+.mb-done{color:var(--grn);background:var(--gna);border:1px solid rgba(74,222,128,0.2)}
+.mb-pend{color:var(--gold);background:var(--ga);border:1px solid rgba(201,168,76,0.15)}
+.mark-btn{background:none;border:1px solid var(--bdr2);color:var(--txt3);font-family:var(--fm);font-size:9px;padding:2px 7px;border-radius:99px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.mark-btn:hover{border-color:var(--gold);color:var(--gold)}
+.mark-btn.undo-mode{border-color:var(--red);color:var(--red)}
+.module-body{overflow:hidden;max-height:0;transition:max-height .3s ease}
+.module-body.open{max-height:99999px}
+
+/* VIDEOS */
+.video-list{padding:5px 10px;display:flex;flex-direction:column;gap:2px}
+.vi{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:var(--rs);cursor:pointer;border:1px solid transparent;transition:all .1s;user-select:none}
+.vi:hover{background:var(--s4);border-color:var(--bdr)}
+.vi.done{background:var(--gb);border-color:rgba(201,168,76,0.1)}
+.vi.done .vi-title{color:var(--txt3);text-decoration:line-through;text-decoration-color:var(--txt3)}
+.vi.overflow-warn{border-color:rgba(251,146,60,0.3);background:var(--oraa)}
+.vi-num{font-family:var(--fm);font-size:9px;color:var(--txt3);min-width:32px;flex-shrink:0}
+.chk{width:12px;height:12px;border-radius:3px;border:1.5px solid var(--bdr2);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.vi.done .chk{background:var(--gold);border-color:var(--gold)}
+.chk-tick{display:none;color:#080809;font-size:7px;font-weight:700}
+.vi.done .chk-tick{display:block}
+.vi-title{font-size:11px;color:var(--txt2);flex:1;line-height:1.3}
+.vi-time{font-family:var(--fm);font-size:9px;color:var(--txt3);white-space:nowrap}
+.overflow-tag{font-family:var(--fm);font-size:8px;color:var(--ora);background:var(--oraa);border:1px solid rgba(251,146,60,0.2);padding:1px 5px;border-radius:3px;white-space:nowrap}
+
+/* SUBJECT TRANSITION DIVIDER */
+.subj-transition{display:flex;align-items:center;gap:8px;margin:10px 0 6px;padding:0 2px}
+.st-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(96,165,250,0.3),transparent)}
+.st-label{font-family:var(--fm);font-size:9px;color:var(--blu);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;padding:2px 8px;background:var(--bla);border:1px solid rgba(96,165,250,0.2);border-radius:99px}
+
+/* ── TAB 2: DAILY TIMELINE ── */
+.day-summary{background:var(--s2);border:1px solid var(--bdr);border-radius:var(--rl);padding:16px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px}
+.ds-info{flex:1}
+.ds-title{font-family:var(--fd);font-size:15px;font-weight:700;color:var(--txt);margin-bottom:3px}
+.ds-sub{font-size:12px;color:var(--txt2)}
+.ds-date{font-family:var(--fm);font-size:10px;color:var(--txt3);margin-top:5px}
+.pchip{border-radius:var(--r);padding:8px 12px;text-align:center;min-width:72px;flex-shrink:0}
+.pchip-num{font-family:var(--fd);font-size:18px;font-weight:700;line-height:1}
+.pchip-label{font-family:var(--fm);font-size:9px;text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+
+/* TIMELINE ITEMS */
+.tl-section{margin-bottom:6px}
+.tl-item{display:flex;align-items:stretch;gap:0;margin-bottom:5px}
+.tl-gutter{display:flex;flex-direction:column;align-items:center;width:52px;flex-shrink:0;padding-top:2px}
+.tl-time{font-family:var(--fm);font-size:9px;color:var(--txt3);white-space:nowrap;line-height:1.2;text-align:center}
+.tl-line{flex:1;width:1px;background:var(--bdr2);margin-top:4px}
+.tl-card{flex:1;min-width:0}
+
+/* LIFESTYLE CARD */
+.lc{background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r);padding:10px 14px;display:flex;align-items:center;gap:10px;transition:border-color .15s;cursor:pointer}
+.lc:hover{border-color:var(--bdr2)}
+.lc.lc-done{border-color:rgba(74,222,128,0.2);background:var(--gnb)}
+.lc.lc-past{opacity:.55}
+.lc-icon{font-size:16px;flex-shrink:0}
+.lc-info{flex:1;min-width:0}
+.lc-label{font-size:12px;font-weight:500;color:var(--txt)}
+.lc-sub{font-size:10px;color:var(--txt3);font-family:var(--fm);margin-top:1px}
+.lc-toggle{width:20px;height:20px;border-radius:5px;border:1.5px solid var(--bdr2);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.lc.lc-done .lc-toggle{background:var(--grn);border-color:var(--grn)}
+.lc-tick{display:none;color:#080809;font-size:10px;font-weight:700}
+.lc.lc-done .lc-tick{display:block}
+
+/* STUDY BLOCK CARD */
+.blk-card{background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden;transition:border-color .15s}
+.blk-card.blk-current{border-color:rgba(201,168,76,0.35);box-shadow:0 0 0 1px rgba(201,168,76,0.1)}
+.blk-card.blk-past{opacity:.6}
+.blk-card.blk-done{border-color:rgba(74,222,128,0.2);background:var(--gnb)}
+.blk-hd{padding:11px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background .12s}
+.blk-hd:hover{background:var(--s3)}
+.blk-num-badge{font-family:var(--fd);font-size:18px;font-weight:700;min-width:24px;line-height:1}
+.blk-times{display:flex;flex-direction:column;gap:1px;flex-shrink:0}
+.blk-main-time{font-family:var(--fm);font-size:10px;font-weight:500;color:var(--txt2);white-space:nowrap}
+.blk-sub-times{font-family:var(--fm);font-size:8px;color:var(--txt3);white-space:nowrap}
+.blk-info{flex:1;min-width:0}
+.blk-title{font-size:12px;font-weight:500;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.blk-meta{font-size:10px;color:var(--txt3);margin-top:1px;font-family:var(--fm)}
+.blk-count{font-family:var(--fm);font-size:10px;color:var(--txt3);flex-shrink:0;white-space:nowrap}
+.big-chk{width:22px;height:22px;border-radius:5px;border:1.5px solid var(--bdr2);flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
+.big-chk.done{background:var(--grn);border-color:var(--grn)}
+.big-chk.done .bct{display:block}
+.bct{display:none;color:#080809;font-size:10px;font-weight:700}
+.blk-body{border-top:1px solid var(--bdr);overflow:hidden;max-height:0;transition:max-height .3s ease}
+.blk-body.open{max-height:3000px}
+.blk-study-section{padding:8px 12px 4px}
+.blk-section-label{font-family:var(--fm);font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--txt3);margin-bottom:5px;display:flex;align-items:center;gap:6px}
+.blk-section-label::after{content:'';flex:1;height:1px;background:var(--bdr)}
+.bvideo-list{display:flex;flex-direction:column;gap:3px}
+.bvi{display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border-radius:var(--rs);cursor:pointer;border:1px solid transparent;transition:all .1s;user-select:none}
+.bvi:hover{background:var(--s3);border-color:var(--bdr)}
+.bvi.done{background:var(--gb);border-color:rgba(201,168,76,0.1)}
+.bvi.done .bvi-title{color:var(--txt3);text-decoration:line-through;text-decoration-color:var(--txt3)}
+.bvi.bvi-focus{border-color:rgba(201,168,76,0.4);background:var(--ga)}
+.bvi-num{font-family:var(--fm);font-size:9px;color:var(--txt3);min-width:36px;flex-shrink:0;padding-top:1px}
+.bvi-body{flex:1;min-width:0}
+.bvi-title{font-size:11px;color:var(--txt2);line-height:1.3}
+.bvi-ctx{font-size:9px;color:var(--txt3);font-family:var(--fm);margin-top:2px}
+.bvi-time{font-family:var(--fm);font-size:9px;color:var(--txt3);white-space:nowrap;flex-shrink:0;padding-top:1px}
+.tread-row{margin:6px 12px 8px;background:var(--gna);border:1px solid rgba(74,222,128,0.15);border-radius:var(--rs);padding:8px 12px;display:flex;align-items:center;gap:10px}
+.tr-info{flex:1}
+.tr-title{font-size:11px;font-weight:500;color:var(--grn)}
+.tr-sub{font-size:9px;color:rgba(74,222,128,0.55);margin-top:1px;font-family:var(--fm)}
+
+/* KEYBOARD SHORTCUT HINT */
+.kbd-hint{font-family:var(--fm);font-size:9px;color:var(--txt3);display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.kbd{background:var(--s3);border:1px solid var(--bdr2);border-radius:3px;padding:1px 5px;color:var(--txt2)}
+
+/* END OF DAY SUMMARY */
+.eod-card{background:linear-gradient(135deg,rgba(201,168,76,0.08),rgba(201,168,76,0.03));border:1px solid rgba(201,168,76,0.2);border-radius:var(--rl);padding:20px;margin-bottom:16px}
+.eod-title{font-family:var(--fd);font-size:16px;font-weight:700;color:var(--gold2);margin-bottom:12px}
+.eod-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.eod-stat{background:var(--s2);border-radius:var(--rs);padding:10px;text-align:center}
+.eod-val{font-family:var(--fd);font-size:18px;font-weight:700;color:var(--txt)}
+.eod-key{font-family:var(--fm);font-size:9px;color:var(--txt3);margin-top:2px;text-transform:uppercase}
+
+/* JOURNAL INPUTS */
+.input-field{width:100%;background:var(--s3);border:1px solid var(--bdr2);border-radius:var(--rs);color:var(--txt);font-family:var(--ff);font-size:12px;padding:7px 11px;outline:none;transition:border-color .15s}
+.input-field:focus{border-color:var(--gold)}
+.textarea-field{width:100%;background:var(--s3);border:1px solid var(--bdr2);border-radius:var(--rs);color:var(--txt);font-family:var(--ff);font-size:12px;padding:9px 11px;resize:vertical;min-height:80px;outline:none;transition:border-color .15s;line-height:1.6}
+.textarea-field:focus{border-color:var(--gold)}
+.save-btn{background:none;border:1px solid rgba(201,168,76,0.3);color:var(--gold2);font-family:var(--fm);font-size:10px;padding:5px 12px;border-radius:var(--rs);cursor:pointer;transition:all .15s}
+.save-btn:hover{background:var(--ga)}
+.score-btn{background:none;border:1px solid rgba(96,165,250,0.3);color:var(--blu);font-family:var(--fm);font-size:10px;padding:5px 12px;border-radius:var(--rs);cursor:pointer;transition:all .15s}
+.score-btn:hover{background:var(--bla)}
+.score-chips{display:flex;gap:8px;margin:6px 0;flex-wrap:wrap}
+.sc-chip{padding:3px 9px;border-radius:99px;font-family:var(--fm);font-size:11px;font-weight:500}
+.chip-r{background:var(--bla);color:var(--blu);border:1px solid rgba(96,165,250,0.25)}
+.chip-w{background:var(--pra);color:var(--prp);border:1px solid rgba(167,139,250,0.25)}
+.score-result{background:var(--s3);border:1px solid var(--bdr2);border-radius:var(--rs);padding:10px;margin-top:8px;font-size:12px;color:var(--txt2);line-height:1.7;display:none}
+.score-result.vis{display:block}
+.field-label{font-family:var(--fm);font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+.field-group{margin-bottom:12px}
+
+/* ── TAB 3: ANALYTICS ── */
+.date-nav{display:flex;align-items:center;gap:8px;margin-bottom:14px;background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r);padding:9px 12px}
+.dnb{background:none;border:1px solid var(--bdr2);color:var(--txt2);font-size:10px;padding:4px 9px;border-radius:var(--rs);cursor:pointer;transition:all .15s;font-family:var(--fm)}
+.dnb:hover{border-color:var(--gold);color:var(--gold)}
+.dn-display{font-family:var(--fm);font-size:11px;color:var(--txt);flex:1;text-align:center}
+.ana-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.ana-card{background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r);padding:14px}
+.ana-title{font-family:var(--fm);font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--txt3);margin-bottom:10px}
+.chart-wrap{position:relative;width:100%;height:150px}
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:16px}
+.wday{background:var(--s2);border:1px solid var(--bdr);border-radius:var(--rs);padding:10px 8px;text-align:center}
+.wday.wday-today{border-color:rgba(201,168,76,0.3);background:var(--gb)}
+.wday-label{font-family:var(--fm);font-size:9px;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.wday-date{font-size:11px;font-weight:500;color:var(--txt);margin-bottom:6px}
+.wday-hrs{font-family:var(--fd);font-size:16px;font-weight:700;color:var(--gold2);line-height:1}
+.wday-sub{font-family:var(--fm);font-size:9px;color:var(--txt3);margin-top:2px}
+.wday-dot{width:6px;height:6px;border-radius:50%;margin:4px auto 0;background:var(--txt4)}
+.wday-dot.active{background:var(--grn)}
+.weekly-summary{background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r);padding:14px;margin-bottom:14px}
+.ws-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.ws-stat{text-align:center}
+.ws-val{font-family:var(--fd);font-size:18px;font-weight:700;color:var(--gold2)}
+.ws-key{font-family:var(--fm);font-size:9px;color:var(--txt3);text-transform:uppercase;margin-top:2px}
+.day-detail-card{background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r);padding:14px;margin-bottom:10px}
+.ddc-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.ddc-title{font-size:12px;font-weight:500;color:var(--txt)}
+.ddc-date{font-family:var(--fm);font-size:10px;color:var(--txt3)}
+.routine-mini{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+.rm-item{background:var(--s3);border:1px solid var(--bdr);border-radius:4px;padding:6px 4px;text-align:center;font-size:13px}
+.rm-item.rm-done{background:var(--gnb);border-color:rgba(74,222,128,0.2)}
+.rm-label{font-family:var(--fm);font-size:8px;color:var(--txt3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.view-tabs{display:flex;gap:4px;margin-bottom:14px}
+.vtab{background:var(--s2);border:1px solid var(--bdr);border-radius:var(--rs);padding:6px 14px;font-family:var(--fm);font-size:10px;color:var(--txt3);cursor:pointer;transition:all .15s}
+.vtab.active{background:var(--ga);border-color:rgba(201,168,76,0.25);color:var(--gold2)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="brand">CFA COMMAND CENTER<span>Master · Yuvam Garg</span></div>
+    <div id="storage-warn" class="chip">⚠ Incognito — progress not saved</div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('cfa')">01 · Syllabus</div>
+      <div class="tab" onclick="switchTab('targets')">02 · Daily Execution</div>
+      <div class="tab" onclick="switchTab('analytics')">03 · Analytics & History</div>
+    </div>
+    <div class="topbar-right">
+      <div id="auth-badge"></div>
+      <div style="display:flex;align-items:center;gap:5px;font-family:var(--fm);font-size:10px;color:var(--txt3)">
+        <span id="sync-dot" style="width:7px;height:7px;border-radius:50%;background:#4a4845;display:inline-block;transition:background .3s"></span>
+        <span id="sync-label"></span>
+      </div>
+      <div class="chip chip-gold" id="chip-jul">— d to Jul 15</div>
+      <div class="chip chip-red" id="chip-exam">— d to exam</div>
+    </div>
+  </div>
+  <div class="panels">
+    <div class="panel active" id="panel-cfa"></div>
+    <div class="panel" id="panel-targets"></div>
+    <div class="panel" id="panel-analytics"></div>
+  </div>
+</div>
+<script>
+// ══════════════════════════════════════════════════════════
+// SYLLABUS DATA
+// ══════════════════════════════════════════════════════════
+const SYL=[
+  {id:'quant',title:'Quantitative Methods',emoji:'📐',modules:[
+    {title:'Time Value of Money',subtopics:[{t:'TVM – 1',m:42},{t:'TVM – 2',m:60},{t:'Cash Flow & Ordinary Annuity',m:39},{t:'Annuity Due',m:52},{t:'Unequal CF & Perpetuity',m:38},{t:'Compounding Frequency & Effective Rates',m:80},{t:'Bond',m:30},{t:'Loan Amortization – 1',m:73},{t:'Loan Amortization – 2',m:7},{t:'Continuous Rates – 1',m:62},{t:'Continuous Rates – 2',m:45},{t:'Equivalent Rate',m:11},{t:'Perpetuity Sum',m:27},{t:'Interest & Annuity Factors',m:5},{t:'Growth & Retirement Sum',m:41},{t:'Cash Flow Additivity',m:9},{t:'MWROR & TWROR',m:42},{t:'Returns: Gross, Net, Leveraged',m:23}]},
+    {title:'TVM in Finance',subtopics:[{t:'Annualized Rate Clarification',m:3}]},
+    {title:'Statistical Measures',subtopics:[{t:'Measures of Central Tendency – 1',m:46},{t:'Measures of Central Tendency – 2',m:35},{t:'AM, GM, HM, IRR vs GM',m:80},{t:'GM Difficult Sum',m:10},{t:'Skewness & Kurtosis',m:57},{t:'Covariance & Correlation',m:53},{t:'Data Types',m:28},{t:'Weights & Frequency',m:13},{t:'Tackling Outliers',m:11},{t:'Downside Deviation',m:28},{t:'Frequency Distribution',m:42},{t:'Quartile/Decile/Percentile',m:22},{t:'Interpolation',m:29},{t:'Contingency Table',m:20}]},
+    {title:'Probability',subtopics:[{t:'Probability Concepts',m:63},{t:'Expected Value Formula',m:33},{t:'Expected Value Sums',m:38},{t:'Portfolio Variance',m:70},{t:'Conditional EV & Counting',m:40},{t:'Probability Tree',m:10}]},
+    {title:'Portfolio Mathematics',subtopics:[{t:'Probability Concepts',m:62},{t:'EV from Probability Table',m:30},{t:"Roy's Safety First Criterion",m:34}]},
+    {title:'Probability Distributions',subtopics:[{t:'Distributions – 1',m:36},{t:'Probability Functions',m:22},{t:'Binomial – 1',m:32},{t:'Binomial – 2',m:24},{t:'Normal Distribution – 1',m:35},{t:'Standard Normal',m:51},{t:'Confidence Interval',m:57},{t:'Z Table',m:29},{t:'Lognormal – 1',m:51},{t:'Lognormal – 2',m:18},{t:'Normal Distribution – 2',m:20},{t:'Sharpe Ratio',m:40},{t:'Sensitivity / Scenario / Stress',m:34},{t:'Monte Carlo Simulation',m:29},{t:'Chi-Square & F',m:9},{t:'IID Returns',m:18}]},
+    {title:'Sampling, Estimation & Inference',subtopics:[{t:'Point Estimation & CI',m:52},{t:'Sampling',m:70},{t:'Sampling Distribution',m:54},{t:'T Table',m:25},{t:'Z vs T',m:20},{t:'CLT & Good Estimator',m:41},{t:'SD vs SE',m:13},{t:'Sample Correlation',m:3},{t:'Bootstrap & Jackknife',m:33}]},
+    {title:'Hypothesis Testing',subtopics:[{t:'Intro',m:40},{t:'One-Tail / Two-Tail',m:25},{t:'HT Sums – 1',m:38},{t:'HT Sums – 2',m:43},{t:'Steps & Types',m:31},{t:'Variance Test',m:30},{t:'Equality of Variance',m:30},{t:'Dependent Sample',m:26},{t:'Independent Sample – 1',m:32},{t:'Independent Sample – 2',m:24},{t:'P-Value',m:37},{t:'P-Value Sums',m:45},{t:'Type I & II Error, Power',m:35},{t:'Statistical vs Economic Significance',m:6},{t:'Adjusted Significance',m:24},{t:'T Distribution',m:64}]},
+    {title:'Correlation Tests',subtopics:[{t:'Test of Correlation',m:36},{t:'Spearman Rank',m:26},{t:'Contingency Table',m:35}]},
+    {title:'Simple Linear Regression',subtopics:[{t:'Correlation & Covariance',m:23},{t:'OLS & Coefficients',m:46},{t:'SSR, SSE, TSS, R²',m:27},{t:'Assumptions',m:30},{t:'T Tests',m:40},{t:'ANOVA',m:47},{t:'Predicted Value',m:12},{t:'Functional Forms',m:20}]},
+    {title:'Big Data Techniques',subtopics:[{t:'Fintech in IM – 1',m:60},{t:'Fintech in IM – 2',m:49}]}
+  ]},
+  {id:'econ',title:'Economics',emoji:'🌍',modules:[
+    {title:'Firm & Market Structures',subtopics:[{t:'How to Study Economics',m:9},{t:'Intro to Economics',m:2},{t:'Shutdown Point, LRATC',m:75},{t:'Market Structures',m:40},{t:'N-Firm Concentration & HHI',m:51},{t:'Monopolistic Competition',m:45},{t:'Oligopoly: Kinked Demand Curve',m:32},{t:'Nash Equilibrium',m:39},{t:'Cournot, Stackelberg, Dominant Firm',m:34},{t:'Summary',m:9}]},
+    {title:'Understanding Business Cycles',subtopics:[{t:'Business Cycles',m:65},{t:'Credit Cycles',m:13},{t:'Resource Use Fluctuations',m:60},{t:'Economic Indicators',m:26},{t:'Unemployment',m:30},{t:'Inflation',m:21}]},
+    {title:'Fiscal Policy',subtopics:[{t:'Monetary vs Fiscal Policy',m:32},{t:'Objectives & Debt Ratio',m:48},{t:'Fiscal Policy Tools',m:26},{t:'Fiscal Policy Lags',m:48},{t:'Fiscal Multiplier',m:56},{t:'Sum of Multipliers',m:2}]},
+    {title:'Monetary Policy',subtopics:[{t:'Central Bank Rule',m:50},{t:'Monetary Policy Tools',m:37},{t:'Monetary Policy & CB',m:52},{t:'Limitations',m:51},{t:'Interaction with Fiscal Policy',m:24},{t:'Quantity Theory of Money',m:26}]},
+    {title:'Introduction to Geopolitics',subtopics:[{t:'Intro',m:3},{t:'Geopolitics – 1',m:47},{t:'Geopolitical Risk',m:53},{t:'Tools & Organizations',m:40}]},
+    {title:'International Trade',subtopics:[{t:'Trading Blocs',m:28},{t:'Trade Basics',m:40},{t:'Costs vs Benefits',m:45},{t:'Tariff & Quota',m:39},{t:'Deadweight Loss',m:3},{t:'Trade Restrictions',m:50}]},
+    {title:'Capital Flows & FX Market',subtopics:[{t:'Exchange Rate Regimes',m:51},{t:'Real Exchange Rate',m:51},{t:'Real Exchange Rate – II',m:47},{t:'Capital Restrictions',m:17},{t:'FX Market',m:12},{t:'Changes in Exchange Rates',m:29}]},
+    {title:'Exchange Rate Calculations',subtopics:[{t:'Exchange Rate Foundations',m:84},{t:'Currency Forward Rate',m:36},{t:'Currency Forward Arbitrage',m:54},{t:'Forward % & Points',m:55},{t:'Forward Sums',m:15},{t:'Forward Rate Formula',m:3}]},
+    {title:'Aggregate Output, Prices & Growth',subtopics:[{t:'GDP, GNP, Real vs Nominal',m:68},{t:'Growth – 1',m:37},{t:'Growth – 2',m:45},{t:'IS–LM, AD–AS, GDP Graphs',m:70},{t:'Shifts in AD & AS',m:34},{t:'Growth – 3',m:66},{t:'Growth – 4',m:44}]},
+    {title:'Currency Exchange Rates',subtopics:[{t:'Currency Basics',m:70}]},
+    {title:'Demand & Supply Analysis',subtopics:[{t:'Demand, Supply, Elasticity',m:50},{t:'Elasticity Sums',m:7},{t:'Factors of Production',m:39},{t:'Price Discrimination',m:5},{t:'Elasticity & Total Revenue',m:3}]},
+    {title:'Intro to the Firm & Market',subtopics:[{t:'Product Cost: Total, Avg, Marginal',m:30},{t:'Accounting vs Economic Profit',m:30},{t:'AVC, AR, MR, MC',m:56}]}
+  ]},
+  {id:'fsa',title:'Financial Statement Analysis',emoji:'📊',modules:[
+    {title:'FSA Framework & Income Statements',subtopics:[{t:'Introduction to FSA',m:22},{t:'Financial Reporting vs FSA',m:25},{t:'Financial Statements, MD&A, Notes',m:35},{t:'Audit Opinion',m:40},{t:'IFRS, US GAAP, SEC',m:52},{t:'Information Sources, SEC Filings',m:38},{t:'Segment Reporting',m:17},{t:'Income Statement – 1',m:80},{t:'Income Statement Details',m:30},{t:'Minority Interest',m:25},{t:'Stock Split, Dividend, Rights Shares',m:67},{t:'Basic EPS',m:50},{t:'Diluted EPS',m:32},{t:'Diluted EPS – 2',m:94},{t:'Assets: Current, Tangible, Intangible',m:37},{t:'Depreciation, Amortization & Depletion',m:30},{t:'Depreciation – 1',m:60},{t:'Revenue Recognition',m:45},{t:'Revenue Recognition Methods',m:52},{t:'Expensing',m:55},{t:'Receivables, Warranty & Inventory',m:35},{t:'Capitalizing vs Expensing (Ratios)',m:26},{t:'Capitalizing vs Expensing – Sums',m:72},{t:'Capitalized Interest',m:31},{t:'Non-Recurring Items',m:20},{t:'R&D Costs',m:34},{t:'Changes in Accounting Policies',m:45},{t:"Changes in Shareholders' Equity",m:14}]},
+    {title:'Analyzing Balance Sheets',subtopics:[{t:'Assets, Intangible Assets & R&D',m:45},{t:'Long-Term Financial Liabilities',m:12},{t:'Goodwill Summary',m:15},{t:'Financial Instruments Accounting',m:62}]},
+    {title:'Cash Flow Statements',subtopics:[{t:'Introduction to Cash Flow Statements',m:35},{t:'Cash Flow Calculations',m:43},{t:'Cash Flow Statement – 1',m:39},{t:'Cash Flow Statements – Sum 1',m:53},{t:'CFO Indirect Method',m:60},{t:'Cash Flow Statement Analysis',m:18},{t:'Indirect to Direct Method',m:25},{t:'CFO, FCFF & FCFE',m:62},{t:'Cash Flow Statements – Sum 2',m:23},{t:'Cash Flow Ratios',m:22}]},
+    {title:'Analysis of Inventories',subtopics:[{t:'Inventory & COGS',m:21},{t:'Inventory Valuation Methods',m:62},{t:'FIFO, LIFO Impact',m:31},{t:'LIFO Reserve',m:43},{t:'LIFO Liquidation',m:28},{t:'Inventory Measurement (IFRS vs GAAP)',m:50},{t:'Inventory Disclosures',m:40},{t:'Inventory Sum – 1',m:30},{t:'Inventory Sum – 2',m:15}]},
+    {title:'Analysis of Long-Term Assets',subtopics:[{t:'Intangible Asset Creation',m:46},{t:'Impairment Loss',m:76},{t:'Long-Term Asset Disclosures',m:30},{t:'Derecognition & Spin-Offs',m:32}]},
+    {title:'Long-Term Liabilities & Equity',subtopics:[{t:'Introduction to Leases',m:36},{t:'Lease Accounting',m:75},{t:'Lease Accounting Ratios',m:55},{t:'Lessor Accounting',m:33},{t:'Lessor Accounting – 2',m:26},{t:'Lessor Accounting Revision',m:7},{t:'Share-Based Compensation',m:57},{t:'Long-Term Liabilities',m:24},{t:'Pension Plans: DCP & DBP',m:77}]},
+    {title:'Topic 35 — Analysis of Income Taxes',subtopics:[{t:'Introduction to Income Taxes & DDL',m:60},{t:'Deferred Tax Assets & Permanent Differences',m:43},{t:'DTA, DTL & Differences',m:50},{t:'Carrying Value vs Tax Base',m:32},{t:'DTA, DTL & Changes in Tax',m:47},{t:'Income Tax Expense',m:24},{t:'Valuation Analysis of DTA & DTL',m:41},{t:'DTA, DTL – Sums',m:32},{t:'Tax Rates & Disclosures',m:36},{t:'Income Tax Disclosures',m:19}]},
+    {title:'Topic 36 — Financial Reporting Quality',subtopics:[{t:'Financial Reporting Quality',m:59},{t:'Low-Quality Reports: Reasons',m:27},{t:'Regulators & GAAP Measures',m:23},{t:'Choices and Warning Signs',m:56}]},
+    {title:'Topic 37 — Financial Analysis Techniques',subtopics:[{t:'Ratios',m:25},{t:'Profitability Ratios',m:48},{t:'Activity Ratios',m:69},{t:'Liquidity Ratios',m:46},{t:'Solvency Ratios',m:48},{t:'DuPont Analysis',m:37},{t:'Financial Analysis Techniques',m:46},{t:'Pro Forma Financial Statements',m:11},{t:'Relationship Among Ratios',m:10},{t:'Industry-Specific Ratios',m:32}]},
+    {title:'Topic 38 — Financial Modeling',subtopics:[{t:'Introduction to Financial Modeling',m:34},{t:'Financial Modeling & Forecasting',m:46},{t:'Analyst Forecast Horizon',m:55},{t:'Analyst Forecast Behavioral Factors',m:46},{t:'Summary: Financial Statements Modeling',m:10}]}
+  ]},
+  {id:'corp',title:'Corporate Issuers',emoji:'🏢',modules:[
+    {title:'Org Forms & Corporate Governance',subtopics:[{t:'Org Forms Corporate Issuers Features',m:3},{t:'Corporate Governance – 1',m:15},{t:'Corporate Governance – 2',m:9},{t:'Corporate Governance – 3',m:17},{t:'Corporate Governance (Bonus)',m:2}]},
+    {title:'Working Capital and Liquidity',subtopics:[{t:'Working Capital and Liquidity – 1',m:7},{t:'Working Capital and Liquidity – 2',m:5}]},
+    {title:'Capital Investments & Structure',subtopics:[{t:'NPV and IRR',m:90},{t:'Real Options',m:22},{t:'Capital Investments – 1',m:20},{t:'Capital Investments – 2',m:17},{t:'Capital Investments – 3',m:15},{t:'Capital Investments – 4',m:15},{t:'Capital Investments – 5',m:8},{t:'Capital Structure – 1',m:10},{t:'Capital Structure – 2',m:2},{t:'Business Models – 1',m:29},{t:'Business Models – 2',m:40}]}
+  ]},
+  {id:'equity',title:'Equity Investments',emoji:'📈',modules:[
+    {title:'Market Organization and Structure',subtopics:[{t:'Introduction to Market Organization',m:3},{t:'Financial System and Assets',m:35},{t:'Financial Intermediaries',m:57},{t:'Positions, Short Sales, Leveraged Positions',m:60},{t:'Margin Calls (Stocks)',m:46},{t:'Market Orders and Instructions',m:78},{t:'Primary and Secondary Markets',m:48},{t:'Market Structures and Regulators',m:50}]},
+    {title:'Security Market Indexes',subtopics:[{t:'Security Market Indexes',m:60},{t:'Index Calculations',m:41},{t:'Stock Split Impact on Index',m:62},{t:'Comparing All Indexes',m:37},{t:'Rebalancing, Reconstitution, Uses',m:47},{t:'Equity, FI and Alternative Indexes',m:64}]},
+    {title:'Market Efficiency',subtopics:[{t:'Forms of Market Efficiency',m:68},{t:'Factors Affecting Market Efficiency',m:65},{t:'Market Anomalies',m:77},{t:'Behavioral Finance and Anomalies',m:31}]},
+    {title:'Overview of Equity Securities',subtopics:[{t:'Types of Equity and Preference Shares',m:60},{t:'Equity Risk and Return',m:34},{t:'GDR and ADR',m:54},{t:'Public and Private Equity Securities',m:13},{t:'ROE, P/B, Ke vs ER',m:40},{t:'Fair Value vs Intrinsic Value',m:4}]},
+    {title:'Company Analysis – Past & Present',subtopics:[{t:'Research Reports',m:51},{t:'Business Model and Information',m:26},{t:'Revenue Drivers and Pricing Power',m:60},{t:'DOL, DFL, DTL',m:102},{t:'Summary: Company Analysis',m:9}]},
+    {title:'Industry and Competitive Analysis',subtopics:[{t:'Industry Analysis and Equity Research',m:56},{t:'Industry Classification',m:15},{t:'Industry Size, Growth, Profitability',m:46},{t:"Porter's Five Forces",m:60},{t:'PESTLE Analysis',m:30},{t:'Competitive Strategy',m:48},{t:'Industry and Competitive Analysis',m:31},{t:'Summary',m:10}]},
+    {title:'Company Analysis – Forecasting',subtopics:[{t:'Forecasting Objectives',m:33},{t:'Forecast Approaches',m:47},{t:'Top-Down Revenue Forecasting',m:45},{t:'Bottom-Up, Recurring and Non-Recurring',m:36},{t:'COGS, SG&A, Working Capital',m:45},{t:'Forecasting Capex, Capital Investments',m:26}]},
+    {title:'Equity Valuation Models',subtopics:[{t:'Introduction to Equity Valuation',m:3},{t:'Dividend Formulas',m:36},{t:'Ex-Dividend and Cum-Dividend',m:27},{t:'Dividends, Stock Splits, Share Repurchases',m:63},{t:'Valuation Models – Introduction',m:22},{t:'Dividend Discount Model',m:24},{t:'Gordon Growth Model',m:30},{t:'Growth Rate Estimation',m:44},{t:'Multi-Stage Dividend Growth Model',m:43},{t:'Valuing Preferred Stock',m:24},{t:'Implied Growth Rate',m:24},{t:'Multiple-Based Valuation',m:78},{t:'Justified Multiples',m:46},{t:'EBITDA Valuation Model',m:53},{t:'Asset-Based Valuation Model',m:23},{t:'Free Cash Flow Based Valuation',m:33},{t:'Valuation Models: Summary',m:55}]}
+  ]},
+  {id:'fixed',title:'Fixed Income',emoji:'💰',modules:[
+    {title:'Instrument Features',subtopics:[{t:'Fixed Income Instrument Features – 1',m:60},{t:'Bond Indenture and Covenants',m:36}]},
+    {title:'Cash Flows and Types',subtopics:[{t:'Cash Flow Structures',m:38},{t:'Coupon Structures – 1',m:53},{t:'Contingency Provisions – 1',m:36},{t:'Contingency Provisions – 2',m:35},{t:'Domestic and International Bonds',m:45},{t:'Taxation of Bond Income',m:28}]},
+    {title:'Issuance and Trading',subtopics:[{t:'Fixed Income Market Segments',m:50},{t:'Fixed Income Indexes',m:23},{t:'Primary and Secondary Markets',m:37}]},
+    {title:'Corporate Issues',subtopics:[{t:'Short-Term Funding: Non-Financial Corps',m:40},{t:'Short-Term Funding',m:21},{t:'Repurchase Agreements',m:90},{t:'Long-Term Funding',m:20}]},
+    {title:'Government Issues',subtopics:[{t:'Sovereign Debt',m:47},{t:'Sovereign and Non-Sovereign Debt',m:60},{t:'Issuance of Government Bonds',m:48}]},
+    {title:'Fixed Income Valuation',subtopics:[{t:'Bond Pricing',m:51},{t:'Price–Yield Curve',m:55},{t:'Bond Amortization',m:31},{t:'YTM, Semi-Annual, Value vs Price',m:37},{t:'Full Price vs Flat Price',m:60},{t:'Zero-Coupon Bonds and STRIPS',m:52},{t:'Spot Rates',m:77},{t:'Calculating Forward Rates',m:42},{t:'Forward Rates – Sum 1',m:24},{t:'Spot and Bond Prices from Forward Rates',m:29},{t:'Bootstrapping Spot Rates',m:13},{t:'Par Rates',m:44},{t:'Yield Curves',m:29},{t:'Reinvesting Coupons',m:16},{t:'Matrix Pricing',m:23},{t:'Spreads',m:30},{t:'OAS, CB, PB',m:22},{t:'Yield Measures (OAP, OAY)',m:54},{t:'Simple Yield',m:5}]},
+    {title:'Yield and Spread Measures (FRN)',subtopics:[{t:'Floating Rate Note Yields',m:90},{t:'Money Market Yields',m:35}]},
+    {title:'Risk and Return',subtopics:[{t:'Reinvestment Rate Risk vs YTM',m:27},{t:'Duration and Modified Duration',m:64},{t:'Duration – Zero Coupon Bonds',m:38},{t:'Effective Duration and Effective Convexity',m:80},{t:'Effective Duration & Convexity – Sums',m:38},{t:'Callable and Putable Bonds',m:44},{t:'Modified Duration',m:18},{t:'Duration Factors',m:22},{t:'Portfolio Duration',m:33},{t:'PVBP',m:20},{t:'Dollar Duration',m:10},{t:'Term Structure of Yield Volatility',m:12},{t:'Duration & Convexity Recap',m:18}]},
+    {title:'Bond Convexity',subtopics:[{t:'Convexity – Approximate and Effective',m:48},{t:'Money Convexity and Portfolio Convexity',m:32}]},
+    {title:'Curve-Based Risk Measures',subtopics:[{t:'Key Rate Duration',m:65},{t:'Empirical and Analytical Duration',m:33}]},
+    {title:'Credit Risk',subtopics:[{t:'Credit Risk – Introduction',m:39},{t:'Credit Risk in Debt Instruments',m:29},{t:'Measuring Credit Risk',m:47},{t:'Credit Ratings',m:50},{t:'Credit Spread Risk',m:9},{t:'Credit Spread Risk – 2',m:63}]},
+    {title:'Credit Analysis – Government',subtopics:[{t:'Sovereign Government Debt',m:30},{t:'Non-Sovereign Government Debt',m:32}]},
+    {title:'Credit Analysis – Corporate',subtopics:[{t:'Corporate Issuers: Credit Analysis',m:33},{t:'Credit Analysis Financial Ratios',m:41},{t:'Credit Analysis Seniority Rankings',m:50},{t:'Notching and Low-Rated Issuers',m:5}]},
+    {title:'Fixed Income Securitization',subtopics:[{t:'Asset Securitization',m:80},{t:'Securitization: Parties and Roles',m:38},{t:'Securitization Process, Benefits and Risks',m:30}]},
+    {title:'Asset-Backed Securities',subtopics:[{t:'Covered Bonds',m:23},{t:'Credit Enhancement in Securitization',m:40},{t:'Non-Mortgage Asset-Backed Securities',m:45},{t:'Collateralized Debt Obligations (CDOs)',m:31}]},
+    {title:'Mortgage-Backed Securities',subtopics:[{t:'Prepayment Risk and Time Tranching',m:34},{t:'Residential MBS (RMBS)',m:39},{t:'Commercial MBS (CMBS)',m:43},{t:'Mortgage Pass-Through Securities',m:28},{t:'Collateralized Mortgage Obligations (CMOs)',m:53}]}
+  ]},
+  {id:'deriv',title:'Derivatives',emoji:'⚗️',modules:[
+    {title:'Forwards and Futures',subtopics:[{t:'Derivatives Introduction',m:80},{t:'Forward Contracts',m:32},{t:'Futures Contracts',m:37},{t:'Initial, Maintenance, Variation Margin',m:64},{t:'Open Interest and Volume',m:25},{t:'Cash-and-Carry Arbitrage',m:44},{t:'Reverse Cash-and-Carry Arbitrage',m:70},{t:'Forward Price Formula',m:46},{t:'Pricing Forwards',m:50},{t:'Mark-to-Rate (MRR)',m:22},{t:'Forward Rate Agreements (FRA)',m:49},{t:'Synthetic FRA',m:30},{t:'FRA Recap',m:10},{t:'Futures Pricing',m:28}]},
+    {title:'Derivative Instruments & Management',subtopics:[{t:'Hedging and Underlying',m:22},{t:'Exchange-Traded Derivatives',m:46}]},
+    {title:'Derivative Benefits, Risks and Issuers',subtopics:[{t:'Advantages, Risks, and Uses',m:81}]},
+    {title:'Pricing & Valuation of Forwards',subtopics:[{t:'Forward Rates and FRA',m:31},{t:'Forward Rate Agreements',m:30}]},
+    {title:'Pricing & Valuation of Futures',subtopics:[{t:'PVBP and Convexity Bias',m:32}]},
+    {title:'Interest Rate Swaps',subtopics:[{t:'Swaps: Introduction',m:24},{t:'Swaps: Price, Payoff, Value, and Terms',m:50},{t:'Swaps and FRA',m:14},{t:'Swaps Recap',m:15}]},
+    {title:'Options',subtopics:[{t:'Futures and Options',m:37},{t:'Options: Introduction',m:70},{t:'Options Sums',m:51},{t:'Option Types',m:62},{t:'Option Buyer vs Seller, Moneyness, IV, TV',m:53},{t:'Payoff, Profit, IV & TV',m:20},{t:'Minimum and Maximum Value',m:39},{t:'American Call: Early Exercise',m:43},{t:'Put–Call Parity (European)',m:53},{t:'Put–Call Forward Parity',m:35},{t:'Time Value of Option',m:38},{t:'Time Value of Option – 2',m:27},{t:'Option Factors',m:43}]},
+    {title:'Option Replication (Put–Call Parity)',subtopics:[{t:'Option Theory for Balance Sheet',m:54},{t:'Put–Call Parity Recap',m:6}]},
+    {title:'Valuing Derivatives – Binomial Model',subtopics:[{t:'Binomial Theorem',m:52},{t:'Binomial Model: Hedge Ratio',m:47}]}
+  ]},
+  {id:'alt',title:'Alternative Investments',emoji:'🏗️',modules:[
+    {title:'Alt Investment Features',subtopics:[{t:'Introduction to Alternative Investments',m:60},{t:'Forms of Investing',m:15},{t:'Alternative Investment Structures',m:33},{t:'Fee Structures',m:101}]},
+    {title:'Alt Investment Performance & Risk',subtopics:[{t:'Alternative Investment Risks',m:31},{t:'Return Calculation: Alternative Investments',m:12}]},
+    {title:'Private Capital, PE and Debt',subtopics:[{t:'Private Capital and Private Equity',m:63},{t:'Private Equity: Exit Strategies',m:44},{t:'Private Debt',m:56}]},
+    {title:'Real Estate and Infrastructure',subtopics:[{t:'Types of Real Estate',m:46},{t:'Real Estate: Direct and Indirect',m:66},{t:'Infrastructure',m:43}]},
+    {title:'Natural Resources',subtopics:[{t:'Raw Land, Timberland, and Farmland',m:36},{t:'Commodity Valuation',m:30},{t:'Commodity Prices and Investments',m:36},{t:'Commodity Valuation – 2',m:24}]},
+    {title:'Hedge Funds',subtopics:[{t:'Hedge Fund Strategies',m:75},{t:'Characteristics of Hedge Funds',m:40},{t:'Investment Forms: Hedge Funds',m:25},{t:'Funds of Funds, Hedge Fund Risk & Return',m:58}]},
+    {title:'Digital Assets',subtopics:[{t:'Introduction to Digital Assets',m:28},{t:'Distributed Ledger & Financial Applications',m:50},{t:'Digital Asset Categories',m:64},{t:'Digital Asset Characteristics',m:33},{t:'Digital Asset Exchanges',m:31},{t:'Digital Asset Investment Forms',m:52},{t:'Summary: Digital Assets',m:12}]}
+  ]},
+  {id:'port',title:'Portfolio Management',emoji:'🗂️',modules:[
+    {title:'Portfolio Risk and Return – 1',subtopics:[{t:'Risk–Return Calculations',m:80},{t:'Portfolio Risk Sums',m:16},{t:'Portfolio Risk: Change in Correlation',m:34},{t:'Risk-Averse, Risk-Neutral, Risk-Seeking',m:9},{t:'Portfolio Risk: n Identical Assets',m:22},{t:'Sums: n Identical Assets',m:3},{t:'Portfolio SD Across Correlation',m:30},{t:'Efficient Frontier',m:35},{t:'Capital Allocation Line (CAL)',m:53},{t:'Utility Function',m:33},{t:'Major Asset Classes',m:19},{t:'Excel Regression Beta Exercise',m:20},{t:'Excel Regression Beta Exercise – 2',m:19}]},
+    {title:'Portfolio Risk and Return – 2',subtopics:[{t:'Capital Market Line (CML)',m:52},{t:'Systematic and Unsystematic Risk',m:37},{t:'Beta and Security Market Line (SML)',m:40},{t:'CAPM',m:52},{t:'Comparing CAL, CML, CL, SML',m:30},{t:'Sharpe, M², Treynor, Jensen',m:13},{t:'Return-Generating Models',m:40}]},
+    {title:'Portfolio Management Overview',subtopics:[{t:'Steps in Portfolio Management',m:31},{t:'Types of Investors',m:40},{t:'Asset Management Industry',m:40},{t:'Pooled Investments',m:81},{t:'Diversification Ratio',m:27}]},
+    {title:'Portfolio Planning and Construction',subtopics:[{t:'IPS Introduction',m:3},{t:'Investment Policy Statement (IPS)',m:31},{t:'Risk and Return Objectives',m:45},{t:'IPS Constraints',m:64},{t:'Asset Classes and ESG',m:78}]},
+    {title:'Behavioral Biases',subtopics:[{t:'Introduction to Behavioral Biases',m:35},{t:'Cognitive Bias: Belief Perseverance',m:59},{t:'Cognitive Information Processing',m:41},{t:'Emotional Biases',m:29},{t:'Emotional Biases – 2',m:17},{t:'Market Characteristics',m:28}]},
+    {title:'Introduction to Risk Management',subtopics:[{t:'Introduction to Risk Management',m:3},{t:'Risk Management',m:28},{t:'Financial and Non-Financial Risk',m:46},{t:'Risk Governance',m:45},{t:'VaR and CVaR',m:31},{t:'Measuring and Modifying Risk',m:42}]}
+  ]},
+  {id:'ethics',title:'Ethics & Professional Standards',emoji:'⚖️',modules:[
+    {title:'Ethics and Trust',subtopics:[{t:'Intro to Ethics and Trust',m:3},{t:'Ethics and Trust',m:52},{t:'Ethics and Trust – 2',m:50}]},
+    {title:'Ethics Standards and Guidance',subtopics:[{t:'Standards and Guidance – Intro',m:10},{t:'Standards and Guidance – 1',m:23},{t:'Standards and Guidance – 2',m:25},{t:'Buy Side, Sell Side and Client',m:46},{t:'Standards and Guidance – 3',m:63},{t:'Standards and Guidance – 4',m:38},{t:'Standards and Guidance – 5',m:23},{t:'Standards and Guidance – 6',m:61},{t:'Standards and Guidance – 7',m:31},{t:'Standards and Guidance – 8',m:45},{t:'Standards and Guidance – 9',m:25},{t:'Standards and Guidance – 10',m:30},{t:'Standards and Guidance – 11',m:49},{t:'Standards and Guidance – 12',m:23},{t:'Standards and Guidance – 13',m:38},{t:'Standards and Guidance – 14',m:23},{t:'Standards and Guidance – 15',m:36},{t:'Standards and Guidance – 16',m:42},{t:'Standards and Guidance – 17',m:36},{t:'Standards and Guidance – 18',m:8},{t:'Standards and Guidance – 19',m:44},{t:'Standards and Guidance – 20',m:33},{t:'Standards and Guidance – 21',m:29},{t:'Standards and Guidance – 22',m:27},{t:'Standards and Guidance – 23',m:22}]},
+    {title:'GIPS',subtopics:[{t:'Intro to Global Investment',m:2},{t:'Overview of GIPS',m:39},{t:'GIPS – Composites',m:33},{t:'GIPS Standards, Verification',m:46}]},
+    {title:'Ethics Application',subtopics:[{t:'Intro to Ethics Application',m:4},{t:'Ethics Application – 1',m:71},{t:'Ethics Application – 2',m:13},{t:'Ethics Application – 3',m:67},{t:'Ethics Application – 4',m:50},{t:'Ethics Application – 5',m:20},{t:'Ethics Application – 6',m:25},{t:'Ethics Application – 7',m:10}]}
+  ]}
+];
+
+// ── VIDEO LABELS ──
+const TOPIC_NUMS={'quant-0':'1','quant-1':'2','quant-2':'3','quant-3':'4','quant-4':'5','quant-5':'6','quant-6':'7','quant-7':'8','quant-8':'9','quant-9':'10','quant-10':'11','econ-0':'12','econ-1':'13','econ-2':'14','econ-3':'15','econ-4':'16','econ-5':'17','econ-6':'18','econ-7':'19','econ-8':'20','econ-9':'21','econ-10':'22','econ-11':'23','fsa-0':'27','fsa-1':'29','fsa-2':'30','fsa-3':'32','fsa-4':'33','fsa-5':'34','fsa-6':'35','fsa-7':'36','fsa-8':'37','fsa-9':'38','corp-0':'24','corp-1':'25','corp-2':'26','equity-0':'39','equity-1':'40','equity-2':'41','equity-3':'42','equity-4':'43','equity-5':'44','equity-6':'45','equity-7':'46','fixed-0':'47','fixed-1':'48','fixed-2':'49','fixed-3':'50','fixed-4':'51','fixed-5':'52','fixed-6':'54','fixed-7':'55','fixed-8':'58','fixed-9':'59','fixed-10':'60','fixed-11':'61','fixed-12':'62','fixed-13':'63','fixed-14':'64','fixed-15':'65','deriv-0':'66','deriv-1':'68','deriv-2':'69','deriv-3':'70','deriv-4':'71','deriv-5':'72','deriv-6':'73','deriv-7':'74','deriv-8':'75','alt-0':'76','alt-1':'77','alt-2':'78','alt-3':'79','alt-4':'80','alt-5':'81','alt-6':'82','port-0':'83','port-1':'84','port-2':'85','port-3':'86','port-4':'87','port-5':'88','ethics-0':'89','ethics-1':'90','ethics-2':'92','ethics-3':'93'};
+SYL.forEach(t=>t.modules.forEach((m,mi)=>{const tn=TOPIC_NUMS[`${t.id}-${mi}`]||`${t.id}-${mi}`;m.subtopics.forEach((s,si)=>{s.vidLabel=`${tn}.${si+1}`;});}));
+
+// ── CONSTANTS ──
+const DONE_SUBJECTS=['quant','econ'];
+const FSA_DONE=[0,1,2,3,4,5];
+const BLOCKS_PER_DAY=11,BLOCK_MINS=50,TREAD_MINS=10;
+const STUDY_START_H=8,STUDY_END_H=19;
+const TIGHT_DAILY_MINS=423;
+const START=new Date('2026-06-08'),DEADLINE=new Date('2026-07-15'),EXAM=new Date('2026-08-20');
+const WEIGHT_TARGET=93,WEIGHT_DEADLINE=new Date('2026-07-20');
+const SK='cfa4_prog',DK='cfa4_day';
+
+
+// ── SUPABASE SYNC ──
+const SB_URL = 'https://xszyyhwjtsvkaloqdjzt.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhzenl5aHdqdHN2a2Fsb3Fkanp0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4NDk3NDIsImV4cCI6MjA5NjQyNTc0Mn0.kicUuixD9r9P1I7aWxgsUSbEQSlVUf7ZmmF-fWC1zrw';
+const SB_USER = 'master_yuvam'; // fixed user ID — single user app
+
+let _syncTimer = null;
+let _syncStatus = 'idle'; // idle | saving | saved | error
+
+// ── AUTH — Google OAuth via Supabase ──
+const OWNER_EMAIL = 'yuvamgarg001@gmail.com';
+const SB_REDIRECT = 'https://snake-master.com'; // redirect back here after Google login
+
+let isOwner = false;
+let currentUser = null;
+
+// On page load — check if Supabase sent back an access token in the URL hash
+async function initAuth() {
+  // Parse hash from URL (Supabase sends #access_token=... after OAuth)
+  const hash = window.location.hash;
+  if (hash && hash.includes('access_token')) {
+    try {
+      const params = new URLSearchParams(hash.substring(1));
+      const accessToken = params.get('access_token');
+      if (accessToken) {
+        // Get user info from Supabase using this token
+        const r = await fetch(SB_URL + '/auth/v1/user', {
+          headers: { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + accessToken }
+        });
+        if (r.ok) {
+          const user = await r.json();
+          if (user.email === OWNER_EMAIL) {
+            currentUser = user;
+            isOwner = true;
+            // Store token in session
+            sessionStorage.setItem('cfa_token', accessToken);
+            sessionStorage.setItem('cfa_email', user.email);
+          }
+        }
+        // Clean URL hash
+        history.replaceState(null, '', window.location.pathname);
+      }
+    } catch(e) { console.warn('Token parse error:', e); }
+  } else {
+    // Check existing session
+    const token = sessionStorage.getItem('cfa_token');
+    const email = sessionStorage.getItem('cfa_email');
+    if (token && email === OWNER_EMAIL) {
+      isOwner = true;
+      currentUser = { email };
+    }
+  }
+  renderAuthBadge();
+}
+
+function renderAuthBadge() {
+  const el = document.getElementById('auth-badge');
+  if (!el) return;
+  if (isOwner) {
+    el.innerHTML = `<span style="display:flex;align-items:center;gap:6px;font-family:var(--fm);font-size:10px;color:var(--grn)">
+      <span style="width:6px;height:6px;border-radius:50%;background:var(--grn);display:inline-block"></span>
+      Master
+      <span onclick="logoutGoogle()" style="color:var(--txt3);cursor:pointer;text-decoration:underline">Logout</span>
+    </span>`;
+  } else {
+    el.innerHTML = `<span onclick="loginWithGoogle()"
+      style="display:flex;align-items:center;gap:6px;font-family:var(--fm);font-size:10px;
+             color:var(--txt2);cursor:pointer;background:var(--s3);border:1px solid var(--bdr2);
+             padding:4px 10px;border-radius:99px;transition:border-color .15s"
+      onmouseover="this.style.borderColor='rgba(201,168,76,0.4)'"
+      onmouseout="this.style.borderColor='var(--bdr2)'">
+      <svg width="12" height="12" viewBox="0 0 24 24"><path fill="#4ade80" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#60a5fa" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#f87171" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#e8c97a" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Sign in to edit
+    </span>`;
+  }
+}
+
+function loginWithGoogle() {
+  // Show loading state
+  const badge = document.getElementById('auth-badge');
+  if (badge) badge.innerHTML = `<span style="font-family:var(--fm);font-size:10px;color:var(--txt3)">Redirecting…</span>`;
+  // Supabase Google OAuth URL
+  const params = new URLSearchParams({
+    provider: 'google',
+    redirect_to: SB_REDIRECT
+  });
+  window.location.href = `${SB_URL}/auth/v1/authorize?${params.toString()}`;
+}
+
+function logoutGoogle() {
+  sessionStorage.removeItem('cfa_token');
+  sessionStorage.removeItem('cfa_email');
+  isOwner = false;
+  currentUser = null;
+  renderAuthBadge();
+  renderCFA();
+}
+
+function showLoginModal() { loginWithGoogle(); }
+
+function setSyncStatus(s) {
+  _syncStatus = s;
+  const el = document.getElementById('sync-dot');
+  if (!el) return;
+  const map = {
+    idle:   ['#4a4845', ''],
+    saving: ['#facc15', 'Saving…'],
+    saved:  ['#4ade80', 'Synced'],
+    error:  ['#f87171', 'Offline']
+  };
+  const [col, txt] = map[s] || map.idle;
+  el.style.background = col;
+  el.nextElementSibling.textContent = txt;
+}
+
+async function sbFetch(path, method='GET', body=null) {
+  const opts = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer ' + SB_KEY,
+      'Prefer': method === 'POST' ? 'return=minimal,resolution=merge-duplicates' : ''
+    }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(SB_URL + '/rest/v1/' + path, opts);
+  if (!r.ok) {
+    const txt = await r.text().catch(()=>'');
+    throw new Error(`Supabase ${r.status}: ${txt.slice(0,100)}`);
+  }
+  if (method === 'GET') return r.json();
+  return true;
+}
+
+async function cloudLoad() {
+  try {
+    setSyncStatus('saving');
+    const rows = await sbFetch(`tracker?user_id=eq.${SB_USER}&select=progress,day_data`);
+    if (rows && rows.length > 0) {
+      const row = rows[0];
+      // Merge cloud into local — cloud wins for progress, merge day_data
+      if (row.progress) {
+        try {
+          const cloudProg = JSON.parse(row.progress);
+          // Keep locally-marked completions + cloud
+          prog = Object.assign({}, cloudProg, prog);
+        } catch(e) {}
+      }
+      if (row.day_data) {
+        try {
+          const cloudDay = JSON.parse(row.day_data);
+          dayData = Object.assign({}, cloudDay, dayData);
+        } catch(e) {}
+      }
+    }
+    setSyncStatus('saved');
+  } catch(e) {
+    console.warn('Cloud load failed:', e.message);
+    setSyncStatus('error');
+  }
+}
+
+async function cloudSave() {
+  try {
+    setSyncStatus('saving');
+    await sbFetch('tracker', 'POST', {
+      user_id: SB_USER,
+      progress: JSON.stringify(prog),
+      day_data: JSON.stringify(dayData),
+      updated_at: new Date().toISOString()
+    });
+    setSyncStatus('saved');
+    // Fade back to idle after 3s
+    setTimeout(() => { if (_syncStatus === 'saved') setSyncStatus('idle'); }, 3000);
+  } catch(e) {
+    console.warn('Cloud save failed:', e.message);
+    setSyncStatus('error');
+  }
+}
+
+// Debounced save — batches rapid ticks into one write
+function save() {
+  try {
+    localStorage.setItem(SK, JSON.stringify(prog));
+    localStorage.setItem(DK, JSON.stringify(dayData));
+  } catch(e) {}
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(cloudSave, 1200);
+}
+
+// ── LIFESTYLE BLOCKS (outside study hours) ──
+const LIFESTYLE=[
+  {id:'wake',time:'7:00 AM',icon:'🌅',label:'Wake Up + Water',sub:'Immediate hydration'},
+  {id:'breakfast',time:'7:05 AM',icon:'🥚',label:'Breakfast & Supplements',sub:'5 eggs · 500ml milk · Multivitamin · Fish oil D3'},
+  {id:'setup',time:'7:30 AM',icon:'📋',label:'Setup & Planning',sub:'Review today\'s targets · Prep workspace'},
+  // study blocks 8AM-7PM injected here
+  {id:'relax',time:'7:00 PM',icon:'🎧',label:'Relax / Prep',sub:'Wind down from study'},
+  {id:'preworkout',time:'7:20 PM',icon:'🍳',label:'Pre-Workout: 5 Egg Whites',sub:'30-40 min before gym'},
+  {id:'gym',time:'7:30 PM',icon:'💪',label:'Gym Session',sub:'7:30 PM – 9:30 PM · 2 hours'},
+  {id:'dinner',time:'9:30 PM',icon:'🍽️',label:'Shower + Dinner',sub:'Homemade meal · High protein'},
+  {id:'reading',time:'10:00 PM',icon:'📰',label:'Aeon Essays + Bloomberg',sub:'10:00 PM – 11:00 PM'},
+  {id:'supps',time:'11:00 PM',icon:'💊',label:'Magnesium + Psyllium Husk',sub:'Before bed supplements'},
+  {id:'plan',time:'11:20 PM',icon:'🗒️',label:'Plan Next Day',sub:'Set targets · Review schedule'}
+];
+const ROUTINE_IDS=LIFESTYLE.map(l=>l.id);
+
+// ── STATE ──
+let prog={},dayData={};
+let ui={subOpen:{},modOpen:{},blkOpen:{},anaView:'week'};
+let undoTimer=null,undoKey=null,undoVal=null;
+let focusVidIdx=0,focusBlkIdx=0;
+let isScoring=false;
+
+function loadAll(){
+  try{prog=JSON.parse(localStorage.getItem(SK)||'{}')}catch(e){prog={}}
+  try{dayData=JSON.parse(localStorage.getItem(DK)||'{}')}catch(e){dayData={}}
+  SYL.forEach(t=>{
+    if(DONE_SUBJECTS.includes(t.id))t.modules.forEach((m,mi)=>m.subtopics.forEach((s,si)=>{prog[`${t.id}-${mi}-${si}`]=true;}));
+  });
+  const fsa=SYL.find(t=>t.id==='fsa');
+  FSA_DONE.forEach(mi=>fsa.modules[mi].subtopics.forEach((s,si)=>{prog[`fsa-${mi}-${si}`]=true;}));
+}
+// save() is defined in the Supabase sync block above
+function checkStorage(){
+  try{localStorage.setItem('_t','1');localStorage.removeItem('_t');}
+  catch(e){document.getElementById('storage-warn').style.display='inline-flex';}
+}
+
+// ── HELPERS ──
+function fmt(m){const h=Math.floor(m/60),r=m%60;if(!h)return r+'m';if(!r)return h+'h';return h+'h '+r+'m';}
+function dkey(d){return d.toISOString().slice(0,10);}
+function today(){return dkey(new Date());}
+function addDays(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
+function daysTo(to){return Math.max(0,Math.ceil((to-new Date())/864e5));}
+function ampm(h,m=0){const ap=h>=12?'PM':'AM';const hh=h%12||12;const mm=m.toString().padStart(2,'0');return `${hh}:${mm} ${ap}`;}
+
+function getStats(t){
+  let tot=0,done=0,mins=0;
+  t.modules.forEach((m,mi)=>m.subtopics.forEach((s,si)=>{tot++;mins+=s.m;if(prog[`${t.id}-${mi}-${si}`])done++;}));
+  return{tot,done,mins,pct:tot?Math.round(done/tot*100):0};
+}
+function getGlobal(){
+  let tot=0,done=0,mins=0,dMins=0;
+  SYL.forEach(t=>t.modules.forEach((m,mi)=>m.subtopics.forEach((s,si)=>{
+    tot++;mins+=s.m;if(prog[`${t.id}-${mi}-${si}`]){done++;dMins+=s.m;}
+  })));
+  return{tot,done,mins,dMins,pct:tot?Math.round(done/tot*100):0};
+}
+function getPending(){
+  const all=[];
+  SYL.forEach(t=>t.modules.forEach((m,mi)=>m.subtopics.forEach((s,si)=>{
+    if(!prog[`${t.id}-${mi}-${si}`])all.push({key:`${t.id}-${mi}-${si}`,s,mi,si,modTitle:m.title,topicTitle:t.title,topicId:t.id});
+  })));
+  return all;
+}
+
+function getStreak(){
+  let s=0;
+  const todayStr=today();
+  for(let i=0;i<90;i++){
+    const k=dkey(addDays(new Date(),-i));
+    const dd=dayData[k]||{};
+    // Today: eligible even if not yet logged (in progress)
+    if(i===0){s++;continue;}
+    if((dd.studyMins||0)>=TIGHT_DAILY_MINS)s++;
+    else break;
+  }
+  return s;
+}
+
+function getScheduleStatus(){
+  const pending=getPending();
+  const pendingMins=pending.reduce((a,v)=>a+v.s.m,0);
+  const dtl=daysTo(DEADLINE);
+  const diff=dtl*TIGHT_DAILY_MINS-pendingMins;
+  return{ahead:diff>=0,days:Math.abs(diff/TIGHT_DAILY_MINS)};
+}
+
+// Sequential ETA per subject
+function getSubjectETA(topicId){
+  let accMins=0;
+  for(const t of SYL){
+    let pendMins=0;
+    t.modules.forEach((m,mi)=>m.subtopics.forEach((s,si)=>{if(!prog[`${t.id}-${mi}-${si}`])pendMins+=s.m;}));
+    if(t.id===topicId){
+      if(!pendMins)return null;
+      const totalMins=accMins+pendMins;
+      const days=Math.ceil(totalMins/TIGHT_DAILY_MINS);
+      return addDays(new Date(),days).toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+    }
+    accMins+=pendMins;
+  }
+  return null;
+}
+
+// Auto-compute study mins from ticked videos today
+function getAutoStudyMins(dateStr){
+  const blocks=buildBlocks(dateStr);
+  let mins=0;
+  blocks.forEach(b=>b.vids.forEach(v=>{if(prog[v.key])mins+=v.s.m;}));
+  return mins;
+}
+
+function buildBlocks(dateStr){
+  const pending=getPending();
+  if(!pending.length)return[];
+  const saved=dayData[dateStr]||{};
+  const blocks=[];
+  let vi=0,b=0;
+  while(b<BLOCKS_PER_DAY&&vi<pending.length){
+    const blockH=STUDY_START_H+b;
+    const blockLabel=`${ampm(blockH,0)} – ${ampm(blockH+1,0)}`;
+    const studyRange=`${ampm(blockH,0)} – ${ampm(blockH,50)}`;
+    const treadRange=`${ampm(blockH,50)} – ${ampm(blockH+1,0)}`;
+    const vids=[];let acc=0;
+    const next=pending[vi];
+    if(!next)break;
+    if(next.s.m>BLOCK_MINS){
+      // Long video solo block
+      vids.push(next);vi++;
+    } else {
+      // Pack: keep adding while they fit within BLOCK_MINS
+      while(vi<pending.length){
+        const v=pending[vi];
+        if(v.s.m>BLOCK_MINS)break; // next is long, leave for its own block
+        if(acc+v.s.m<=BLOCK_MINS){vids.push(v);acc+=v.s.m;vi++;}
+        else break;
+      }
+      if(!vids.length){vids.push(pending[vi]);acc+=pending[vi].s.m;vi++;}
+    }
+    blocks.push({num:b+1,blockLabel,studyRange,treadRange,vids,
+      treadDone:!!(saved.treads&&saved.treads[b]),blockH,
+      overlong:vids[0]&&vids[0].s.m>BLOCK_MINS});
+    b++;
+  }
+  return blocks;
+}
+
+// Build full schedule: which videos on which date
+function buildPlanner(){
+  const pending=getPending();
+  if(!pending.length)return[];
+  const SUBJECT_COLORS={'quant':'#c9a84c','econ':'#4ade80','fsa':'#60a5fa','corp':'#fb923c','equity':'#a78bfa','fixed':'#f87171','deriv':'#34d399','alt':'#fbbf24','port':'#818cf8','ethics':'#6ee7b7'};
+  const plan=[];
+  let vi=0;
+  let d=new Date();d.setHours(0,0,0,0);
+  // Loop day by day assigning blocks worth of videos
+  while(vi<pending.length){
+    const dateStr=dkey(d);
+    const dayVids=[];let dayMins=0;
+    // Simulate blocks for this day
+    let blocksUsed=0;
+    while(vi<pending.length&&blocksUsed<BLOCKS_PER_DAY){
+      const v=pending[vi];
+      dayVids.push(v);dayMins+=v.s.m;vi++;
+      blocksUsed=Math.ceil(dayMins/BLOCK_MINS);
+    }
+    const subjectIds=[...new Set(dayVids.map(v=>v.topicId))];
+    plan.push({date:new Date(d),dateStr,vids:dayVids,totalMins:dayMins,
+      subjectIds,colors:subjectIds.map(id=>SUBJECT_COLORS[id]||'#8a8880')});
+    d=addDays(d,1);
+  }
+  return plan;
+}
+
+function getCurrentBlockIdx(blocks){
+  const now=new Date();
+  const h=now.getHours(),m=now.getMinutes();
+  const totalMins=h*60+m;
+  for(let i=0;i<blocks.length;i++){
+    const blkStart=(STUDY_START_H+i)*60;
+    const blkEnd=blkStart+60;
+    if(totalMins>=blkStart&&totalMins<blkEnd)return i;
+  }
+  return -1;
+}
+
+function refreshAfterTick(){
+  updateChips();
+  if(document.getElementById('panel-cfa').classList.contains('active')){
+    // Lightweight: update only badges and progress bars, no full re-render
+    SYL.forEach(t=>{
+      const s=getStats(t);
+      const pctEl=document.querySelector(`[data-spct="${t.id}"]`);
+      if(pctEl)pctEl.textContent=s.pct+'%';
+      const fillEl=document.querySelector(`[data-sfill="${t.id}"]`);
+      if(fillEl)fillEl.style.width=s.pct+'%';
+    });
+  }
+  if(document.getElementById('panel-targets').classList.contains('active'))renderTargets();
+}
+
+// ── TAB 1: SYLLABUS ──
+function renderCFA(){
+  const g=getGlobal();const dtl=daysTo(DEADLINE);const dl=daysTo(EXAM);
+  const vidPct=Math.round(Math.max(0,(37-dtl)/37*100));
+  const streak=getStreak();const sched=getScheduleStatus();
+  let h=`<div class="ov-card">
+    <div class="ring-wrap" style="width:84px;height:84px">
+      <svg width="84" height="84" viewBox="0 0 84 84">
+        <circle cx="42" cy="42" r="34" fill="none" stroke="#1a1a1f" stroke-width="8"/>
+        <circle cx="42" cy="42" r="34" fill="none" stroke="#c9a84c" stroke-width="8" stroke-linecap="round"
+          stroke-dasharray="214" stroke-dashoffset="${Math.round(214-214*g.pct/100)}" style="transition:stroke-dashoffset .6s"/>
+      </svg>
+      <div class="ring-ctr"><span class="ring-num" style="font-size:18px;color:var(--gold2)">${g.pct}%</span><span class="ring-sub">done</span></div>
+    </div>
+    <div class="ov-meta">
+      <div class="ov-title">CFA Level 1 — Syllabus Tracker</div>
+      <div class="ov-sub">${g.done}/${g.tot} videos · ${fmt(g.dMins)} of ${fmt(g.mins)} watched</div>
+      <div class="badge-row">
+        <span class="badge" style="background:var(--gna);color:var(--grn);border:1px solid rgba(74,222,128,0.2)">${streak} day streak 🔥</span>
+        <span class="badge" style="background:${sched.ahead?'var(--gna)':'var(--rda)'};color:${sched.ahead?'var(--grn)':'var(--red)'};border:1px solid ${sched.ahead?'rgba(74,222,128,0.2)':'rgba(248,113,113,0.2)'}">
+          ${sched.ahead?'▲':'▼'} ${sched.days.toFixed(1)}d ${sched.ahead?'ahead':'behind'}
+        </span>
+      </div>
+      <div class="days-bar" style="max-width:300px"><div class="days-fill" style="width:${vidPct}%;background:linear-gradient(90deg,#f87171,#c9a84c)"></div></div>
+      <div class="days-label">${dtl}d to Jul 15 deadline · ${dl}d to Aug 20 exam · ~${(TIGHT_DAILY_MINS/60).toFixed(1)}h content/day target</div>
+    </div>
+  </div>`;
+
+  h+=`<div class="stat-row">`;
+  SYL.forEach(t=>{
+    const s=getStats(t);const d=s.pct===100;
+    const eta=getSubjectETA(t.id);
+    h+=`<div class="sc" onclick="toggleSubject('${t.id}')">
+      <div class="sc-emoji">${t.emoji}</div>
+      <div class="sc-val" data-spct="${t.id}" style="${d?'color:var(--grn)':''}">${s.pct}%</div>
+      <div class="sc-key">${t.title.split(' ').slice(0,2).join(' ')}</div>
+      <div class="sc-prog"><div class="sc-prog-fill" data-sfill="${t.id}" style="width:${s.pct}%;background:${d?'var(--grn)':'var(--gold)'}"></div></div>
+      ${eta?`<div class="sc-eta">ETA ${eta}</div>`:''}
+    </div>`;
+  });
+  h+=`</div>`;
+
+  let globalModCount=0;
+  SYL.forEach((topic)=>{
+    const s=getStats(topic);const done=s.pct===100;const active=!DONE_SUBJECTS.includes(topic.id)&&!done;
+    const isOpen=!!ui.subOpen[topic.id];
+    h+=`<div class="subject-block">
+      <div class="subject-hd ${done?'done-s':''} ${active&&!done?'active-s':''}" onclick="toggleSubjectDOM('${topic.id}')">
+        <div class="sh-icon" style="background:${done?'var(--ga)':active?'var(--bla)':'var(--s3)'}">${topic.emoji}</div>
+        <div class="sh-info">
+          <div class="sh-name">${topic.title}</div>
+          <div class="sh-meta">${s.done}/${s.tot} videos · ${fmt(s.mins)} · ${topic.modules.length} modules</div>
+          <div class="sh-prog"><div class="sh-prog-fill" style="width:${s.pct}%;background:${done?'var(--grn)':active?'var(--blu)':'var(--gold)'}"></div></div>
+        </div>
+        <div class="sh-pct" style="${done?'color:var(--grn)':''}">${s.pct}%</div>
+        <svg class="chevron" id="chev-${topic.id}" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="${isOpen?'transform:rotate(180deg)':''}"><path d="M4 6l4 4 4-4"/></svg>
+      </div>
+      <div class="subject-body ${isOpen?'open':''}" id="sb-${topic.id}">
+        <div class="module-list">`;
+    topic.modules.forEach((mod,mi)=>{
+      globalModCount++;
+      let mDone=0;
+      mod.subtopics.forEach((s,si)=>{if(prog[`${topic.id}-${mi}-${si}`])mDone++;});
+      const mTot=mod.subtopics.length;const allDone=mDone===mTot;
+      const mKey=`${topic.id}-${mi}`;const mOpen=!!ui.modOpen[mKey];
+      h+=`<div class="module-block">
+        <div class="module-hd" onclick="toggleMod('${mKey}')">
+          <span class="mh-num">T${TOPIC_NUMS[mKey]||globalModCount}</span>
+          <span class="mh-name">${mod.title}</span>
+          <span class="mh-badge ${allDone?'mb-done':'mb-pend'}">${allDone?'✓ Done':`${mDone}/${mTot}`}</span>
+          <button class="mark-btn" id="mbtn-${mKey}" onclick="event.stopPropagation();markModWithUndo('${topic.id}',${mi},${!allDone})">${allDone?'↺':'✓ all'}</button>
+          <svg style="width:11px;height:11px;color:var(--txt3);transition:transform .2s;flex-shrink:0;${mOpen?'transform:rotate(180deg)':''}" id="mchev-${mKey}" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 6l4 4 4-4"/></svg>
+        </div>
+        <div class="module-body ${mOpen?'open':''}" id="mb-${mKey}">
+          <div class="video-list">`;
+      mod.subtopics.forEach((sub,si)=>{
+        const key=`${topic.id}-${mi}-${si}`;const d=!!prog[key];
+        const overflow=sub.m>BLOCK_MINS;
+        h+=`<div class="vi${d?' done':''}${overflow?' overflow-warn':''}" data-key="${key}" onclick="toggleVid('${key}')">
+          <div class="chk"><span class="chk-tick">✓</span></div>
+          <span class="vi-num">${sub.vidLabel}</span>
+          <span class="vi-title">${sub.t}</span>
+          ${overflow?`<span class="overflow-tag">${sub.m}m</span>`:''}
+          <span class="vi-time">${sub.m}m</span>
+        </div>`;
+      });
+      h+=`</div></div></div>`;
+    });
+    h+=`</div></div></div>`;
+  });
+  document.getElementById('panel-cfa').innerHTML=h;
+}
+
+// DOM-only subject toggle (no full re-render)
+function toggleSubjectDOM(id){
+  ui.subOpen[id]=!ui.subOpen[id];
+  const body=document.getElementById('sb-'+id);
+  const chev=document.getElementById('chev-'+id);
+  if(body)body.classList.toggle('open',!!ui.subOpen[id]);
+  if(chev)chev.style.transform=ui.subOpen[id]?'rotate(180deg)':'';
+}
+function toggleMod(key){
+  ui.modOpen[key]=!ui.modOpen[key];
+  const body=document.getElementById('mb-'+key);
+  const chev=document.getElementById('mchev-'+key);
+  if(body)body.classList.toggle('open',!!ui.modOpen[key]);
+  if(chev)chev.style.transform=ui.modOpen[key]?'rotate(180deg)':'';
+}
+function markModWithUndo(tid,mi,val){
+  if(!isOwner){showLoginModal();return;}
+  const t=SYL.find(x=>x.id===tid);
+  // Store previous state for undo
+  const prev={};
+  t.modules[mi].subtopics.forEach((s,si)=>{prev[`${tid}-${mi}-${si}`]=!!prog[`${tid}-${mi}-${si}`];});
+  t.modules[mi].subtopics.forEach((s,si)=>{if(val)prog[`${tid}-${mi}-${si}`]=true;else delete prog[`${tid}-${mi}-${si}`];});
+  save();
+  // Show undo for 3 seconds
+  const btnId=`mbtn-${tid}-${mi}`;
+  const btn=document.getElementById(btnId);
+  if(btn){
+    btn.textContent='↺ Undo';btn.classList.add('undo-mode');
+    if(undoTimer)clearTimeout(undoTimer);
+    undoTimer=setTimeout(()=>{btn.textContent=val?'↺':'✓ all';btn.classList.remove('undo-mode');undoTimer=null;},3000);
+    btn.onclick=(e)=>{
+      e.stopPropagation();
+      if(undoTimer){clearTimeout(undoTimer);undoTimer=null;}
+      Object.keys(prev).forEach(k=>{if(prev[k])prog[k]=true;else delete prog[k];});
+      save();renderCFA();
+    };
+  }
+  refreshAfterTick();
+  if(!btn)renderCFA();
+}
+function toggleVid(key){
+  if(!isOwner){showLoginModal();return;}
+  prog[key]=!prog[key];if(!prog[key])delete prog[key];
+  save();
+  document.querySelectorAll(`[data-key="${key}"]`).forEach(el=>el.classList.toggle('done',!!prog[key]));
+  refreshAfterTick();
+}
+
+// ── TAB 2: DAILY EXECUTION ──
+function renderTargets(){
+  const todayStr=today();
+  const pending=getPending();
+  const blocks=buildBlocks(todayStr);
+  const dtl=daysTo(DEADLINE);
+  const sched=getScheduleStatus();
+  const streak=getStreak();
+  const dl=dayData[todayStr]||{};
+  const nowH=new Date().getHours();
+  const currentBlkIdx=getCurrentBlockIdx(blocks);
+  const isAfterStudy=nowH>=STUDY_END_H;
+
+  // init block open state
+  blocks.forEach((b,i)=>{if(ui.blkOpen[i]===undefined)ui.blkOpen[i]=(i===currentBlkIdx||currentBlkIdx===-1&&i===0);});
+
+  let totalVids=0,doneVids=0,totalMins=0,doneMins=0;
+  blocks.forEach(b=>{b.vids.forEach(v=>{totalVids++;totalMins+=v.s.m;if(prog[v.key]){doneVids++;doneMins+=v.s.m;}});});
+  const pct=totalVids?Math.round(doneVids/totalVids*100):100;
+  const autoMins=getAutoStudyMins(todayStr);
+  const dateStr=new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const routineDone=LIFESTYLE.filter(l=>(dl.routine||{})[l.id]).length;
+
+  let h='';
+  if(dtl<=3&&dtl>0)h+=`<div style="background:var(--rda);border:1px solid rgba(248,113,113,0.2);border-radius:var(--r);padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--red);display:flex;align-items:center;gap:8px">⚠️ ${dtl} days to July 15. No slack left — push hard.</div>`;
+  if(dtl<=0)h+=`<div style="background:var(--rda);border:1px solid rgba(248,113,113,0.2);border-radius:var(--r);padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--red)">⚠️ July 15 passed. Switch to mocks + revision.</div>`;
+
+  // Day summary header
+  h+=`<div class="day-summary">
+    <div class="ring-wrap" style="width:64px;height:64px">
+      <svg width="64" height="64" viewBox="0 0 64 64">
+        <circle cx="32" cy="32" r="26" fill="none" stroke="#1a1a1f" stroke-width="6"/>
+        <circle cx="32" cy="32" r="26" fill="none" stroke="#4ade80" stroke-width="6" stroke-linecap="round"
+          stroke-dasharray="163" stroke-dashoffset="${Math.round(163-163*pct/100)}" style="transition:stroke-dashoffset .5s"/>
+      </svg>
+      <div class="ring-ctr"><span class="ring-num" style="font-size:13px;color:var(--grn)">${pct}%</span></div>
+    </div>
+    <div class="ds-info">
+      <div class="ds-title">Daily Execution — ${dateStr}</div>
+      <div class="ds-sub">${doneVids}/${totalVids} videos · ${fmt(doneMins)} studied · ${routineDone}/${LIFESTYLE.length} routine blocks done</div>
+      <div class="ds-date">${dtl}d to Jul 15 · ${pending.length} videos remaining · ${streak} day streak 🔥 · ${sched.ahead?'▲':'▼'} ${sched.days.toFixed(1)}d ${sched.ahead?'ahead':'behind'}</div>
+    </div>
+    <div class="pchip" style="background:var(--ga);border:1px solid rgba(201,168,76,0.2);min-width:68px;text-align:center">
+      <div class="pchip-num" style="color:var(--gold2)">${fmt(autoMins)}</div>
+      <div class="pchip-label" style="color:var(--gold)">Studied</div>
+    </div>
+    <div class="pchip" style="background:${sched.ahead?'var(--gna)':'var(--rda)'};border:1px solid ${sched.ahead?'rgba(74,222,128,0.2)':'rgba(248,113,113,0.2)'};min-width:68px;text-align:center">
+      <div class="pchip-num" style="color:${sched.ahead?'var(--grn)':'var(--red)'}">${sched.days.toFixed(1)}d</div>
+      <div class="pchip-label" style="color:${sched.ahead?'rgba(74,222,128,0.7)':'rgba(248,113,113,0.7)'}">${sched.ahead?'Ahead':'Behind'}</div>
+    </div>
+  </div>`;
+
+  h+=`<div class="kbd-hint">Keyboard: <span class="kbd">Space</span> tick video · <span class="kbd">N</span> next block · <span class="kbd">T</span> tick treadmill</div>`;
+
+  // ── MORNING LIFESTYLE BLOCKS (before 8 AM) ──
+  h+=`<div class="sh">Morning — Before Study</div>`;
+  LIFESTYLE.slice(0,3).forEach(item=>{
+    const done=!!((dl.routine||{})[item.id]);
+    const isPast=nowH>=8;
+    h+=`<div class="tl-item">
+      <div class="tl-gutter"><div class="tl-time">${item.time}</div><div class="tl-line"></div></div>
+      <div class="tl-card" style="margin-bottom:5px">
+        <div class="lc ${done?'lc-done':''}${isPast&&!done?' lc-past':''}" onclick="toggleLifestyle('${item.id}','${todayStr}')">
+          <div class="lc-icon">${item.icon}</div>
+          <div class="lc-info"><div class="lc-label">${item.label}</div><div class="lc-sub">${item.sub}</div></div>
+          <div class="lc-toggle"><span class="lc-tick">✓</span></div>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  // ── STUDY BLOCKS ──
+  h+=`<div class="sh">Study Session — 8:00 AM to 7:00 PM</div>`;
+  if(!pending.length){
+    h+=`<div style="text-align:center;padding:40px 20px;color:var(--grn)"><div style="font-size:36px;margin-bottom:12px">🎯</div><div style="font-family:var(--fd);font-size:16px;font-weight:700">All Videos Complete!</div></div>`;
+  } else {
+    let prevSubject='';
+    blocks.forEach((blk,bi)=>{
+      const allDone=blk.vids.every(v=>prog[v.key]);
+      const doneCnt=blk.vids.filter(v=>prog[v.key]).length;
+      const isOpen=!!ui.blkOpen[bi];
+      const isCurrent=bi===currentBlkIdx;
+      const isPast=nowH>=(STUDY_START_H+bi+1);
+      const blkMins=blk.vids.reduce((a,v)=>a+v.s.m,0);
+      const thisSubject=blk.vids[0]?blk.vids[0].topicTitle:'';
+
+      // Subject transition divider
+      if(thisSubject&&thisSubject!==prevSubject&&prevSubject!==''){
+        h+=`<div class="subj-transition"><div class="st-line"></div><div class="st-label">Starting: ${thisSubject}</div><div class="st-line"></div></div>`;
+      }
+      prevSubject=thisSubject;
+
+      h+=`<div class="tl-item">
+        <div class="tl-gutter"><div class="tl-time">${ampm(STUDY_START_H+bi,0)}</div><div class="tl-line"></div></div>
+        <div class="tl-card" style="margin-bottom:5px">
+          <div class="blk-card ${isCurrent?'blk-current':''}${isPast&&!allDone?' blk-past':''}${allDone?' blk-done':''}" id="blkcard-${bi}">
+            <div class="blk-hd" onclick="toggleBlk(${bi})">
+              <div class="blk-num-badge" style="${allDone?'color:var(--grn)':isCurrent?'color:var(--gold)':isPast?'color:var(--red)':'color:var(--txt3)'}">${blk.num}</div>
+              <div class="blk-times">
+                <div class="blk-main-time">${blk.blockLabel}</div>
+                <div class="blk-sub-times">${blk.studyRange} study · ${blk.treadRange} treadmill</div>
+              </div>
+              <div class="blk-info">
+                <div class="blk-title">${blk.vids[0]?blk.vids[0].modTitle:'Block '+blk.num}</div>
+                <div class="blk-meta">${blk.vids[0]?blk.vids[0].topicTitle:''} · ${fmt(blkMins)} · ${doneCnt}/${blk.vids.length} done</div>
+              </div>
+              <div class="big-chk ${allDone?'done':''}" onclick="event.stopPropagation();markBlk(${bi},${!allDone})"><span class="bct">✓</span></div>
+            </div>
+            <div class="blk-body ${isOpen?'open':''}" id="blk-${bi}">
+              <div class="blk-study-section">
+                <div class="blk-section-label">📖 Study — ${blk.studyRange}</div>
+                <div class="bvideo-list">`;
+      blk.vids.forEach((v,vi2)=>{
+        const d=!!prog[v.key];
+        const isFocus=isCurrent&&vi2===0&&!d;
+        h+=`<div class="bvi${d?' done':''}${isFocus?' bvi-focus':''}" data-key="${v.key}" id="vid-${bi}-${vi2}" onclick="toggleVidT('${v.key}')">
+          <div class="chk" style="width:12px;height:12px"><span class="chk-tick">✓</span></div>
+          <span class="bvi-num">${v.s.vidLabel}</span>
+          <div class="bvi-body">
+            <div class="bvi-title">${v.s.t}</div>
+            <div class="bvi-ctx">${v.topicTitle} · ${v.modTitle}</div>
+          </div>
+          <span class="bvi-time">${v.s.m}m</span>
+        </div>`;
+      });
+      h+=`</div></div>
+              <div class="tread-row" id="tread-${bi}">
+                <div style="font-size:16px">🏃</div>
+                <div class="tr-info"><div class="tr-title">Treadmill — ${blk.treadRange}</div><div class="tr-sub">10 min · 4 km/hr · active recovery</div></div>
+                <div class="big-chk ${blk.treadDone?'done':''}" style="border-color:rgba(74,222,128,0.3)" onclick="toggleTread(${bi})"><span class="bct">✓</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    });
+  }
+
+  // ── EVENING LIFESTYLE BLOCKS (after 7 PM) ──
+  h+=`<div class="sh">Evening — After Study</div>`;
+  LIFESTYLE.slice(3).forEach(item=>{
+    const done=!!((dl.routine||{})[item.id]);
+    const timeH=parseInt(item.time);
+    const isPast=nowH>timeH+12||(nowH>=19&&item.id==='relax'&&nowH>19);
+    h+=`<div class="tl-item">
+      <div class="tl-gutter"><div class="tl-time">${item.time}</div><div class="tl-line"></div></div>
+      <div class="tl-card" style="margin-bottom:5px">
+        <div class="lc ${done?'lc-done':''}" onclick="toggleLifestyle('${item.id}','${todayStr}')">
+          <div class="lc-icon">${item.icon}</div>
+          <div class="lc-info"><div class="lc-label">${item.label}</div><div class="lc-sub">${item.sub}</div></div>
+          <div class="lc-toggle"><span class="lc-tick">✓</span></div>
+        </div>
+      </div>
+    </div>`;
+  });
+
+  // ── DAILY JOURNAL SECTION ──
+  h+=`<div class="sh">Daily Journal & Log</div>`;
+
+  // Weight log
+  h+=`<div style="background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r);padding:14px;margin-bottom:8px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <span style="font-size:12px;font-weight:500;color:var(--txt)">⚖️ Weight Log</span>
+      <button class="save-btn" onclick="saveWeight('${todayStr}')">Save</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px">
+      <div>
+        <div class="field-label">Today's Weight (kg)</div>
+        <input class="input-field" id="weight-inp" type="number" step="0.1" min="60" max="150" value="${dl.weight||''}" placeholder="e.g. 99.5" style="max-width:140px"/>
+      </div>
+      <div style="font-family:var(--fm);font-size:11px;color:var(--txt3)">
+        Target: <span style="color:var(--gold2)">${WEIGHT_TARGET} kg</span> by Jul 20<br>
+        ${dl.weight?`<span style="color:${dl.weight<=WEIGHT_TARGET?'var(--grn)':'var(--txt2)'}">${(dl.weight-WEIGHT_TARGET>0?'+':'')}${(dl.weight-WEIGHT_TARGET).toFixed(1)} kg from target</span>`:'—'}
+      </div>
+    </div>
+  </div>`;
+
+  // Daily diary
+  h+=`<div style="background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r);padding:14px;margin-bottom:8px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <span style="font-size:12px;font-weight:500;color:var(--txt)">📓 Daily Diary</span>
+      <button class="save-btn" onclick="saveDiary('${todayStr}')">Save</button>
+    </div>
+    <textarea class="textarea-field" id="diary-inp" placeholder="How did today go? Mood, energy, wins, struggles...">${dl.diary||''}</textarea>
+  </div>`;
+
+  // Aeon essay scorer
+  h+=`<div style="background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r);padding:14px;margin-bottom:8px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <span style="font-size:12px;font-weight:500;color:var(--txt)">📝 Aeon Essay Scorer</span>
+      <div style="display:flex;gap:8px"><button class="score-btn" onclick="scoreEssay('${todayStr}')">Score with AI ✦</button><button class="save-btn" onclick="saveEssay('${todayStr}')">Save</button></div>
+    </div>
+    ${(dl.aeon||{}).readScore?`<div class="score-chips"><span class="sc-chip chip-r">Reading: ${dl.aeon.readScore}/10</span><span class="sc-chip chip-w">Writing: ${dl.aeon.writeScore}/10</span></div>`:''}
+    <div class="field-group"><div class="field-label">Article Link</div><input class="input-field" id="essay-link" placeholder="https://aeon.co/essays/..." value="${(dl.aeon||{}).link||''}"/></div>
+    <div class="field-group"><div class="field-label">Your Essay / Response (max 2000 words)</div><textarea class="textarea-field" id="essay-text" style="min-height:100px" placeholder="Paste your written response here...">${(dl.aeon||{}).essay||''}</textarea></div>
+    <div id="score-result" class="score-result ${(dl.aeon||{}).scoreResult?'vis':''}">${(dl.aeon||{}).scoreResult||''}</div>
+  </div>`;
+
+  // End-of-day summary (show after 7 PM)
+  if(isAfterStudy){
+    const vidsDoneToday=blocks.filter(b=>b.vids.every(v=>prog[v.key])).length;
+    h+=`<div class="eod-card">
+      <div class="eod-title">📊 End of Day Summary</div>
+      <div class="eod-grid">
+        <div class="eod-stat"><div class="eod-val">${fmt(autoMins)}</div><div class="eod-key">Studied</div></div>
+        <div class="eod-stat"><div class="eod-val">${doneVids}/${totalVids}</div><div class="eod-key">Videos</div></div>
+        <div class="eod-stat"><div class="eod-val">${routineDone}/${LIFESTYLE.length}</div><div class="eod-key">Routine</div></div>
+        <div class="eod-stat"><div class="eod-val">${dl.weight||'—'}</div><div class="eod-key">Weight kg</div></div>
+      </div>
+      <div style="font-family:var(--fm);font-size:10px;color:var(--txt3)">
+        ${pct>=80?'✓ Strong day.':pct>=50?'⚡ Decent day — push harder tomorrow.':'⚠ Below target — catch up tomorrow.'}
+        · ${sched.ahead?`▲ ${sched.days.toFixed(1)}d ahead of schedule.`:`▼ ${sched.days.toFixed(1)}d behind — front-load tomorrow.`}
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('panel-targets').innerHTML=h;
+}
+
+function toggleBlk(bi){
+  ui.blkOpen[bi]=!ui.blkOpen[bi];
+  const body=document.getElementById('blk-'+bi);
+  if(body)body.classList.toggle('open',!!ui.blkOpen[bi]);
+}
+function toggleVidT(key){
+  if(!isOwner){showLoginModal();return;}
+  prog[key]=!prog[key];if(!prog[key])delete prog[key];
+  save();
+  document.querySelectorAll(`[data-key="${key}"]`).forEach(el=>el.classList.toggle('done',!!prog[key]));
+  refreshAfterTick();
+  // Update day summary auto-mins
+  const autoMins=getAutoStudyMins(today());
+  const el=document.querySelector('.pchip-num');
+  if(el)el.textContent=fmt(autoMins);
+}
+function markBlk(bi,val){
+  if(!isOwner){showLoginModal();return;}
+  const blocks=buildBlocks(today());
+  if(!blocks[bi])return;
+  blocks[bi].vids.forEach(v=>{if(val)prog[v.key]=true;else delete prog[v.key];});
+  save();renderTargets();refreshAfterTick();
+}
+function toggleTread(bi){
+  if(!isOwner){showLoginModal();return;}
+  const t=today();if(!dayData[t])dayData[t]={};if(!dayData[t].treads)dayData[t].treads={};
+  dayData[t].treads[bi]=!dayData[t].treads[bi];save();
+  const chk=document.querySelector(`#tread-${bi} .big-chk`);
+  if(chk)chk.classList.toggle('done',!!dayData[t].treads[bi]);
+}
+function toggleLifestyle(id,dk2){
+  if(!isOwner){showLoginModal();return;}
+  if(!dayData[dk2])dayData[dk2]={};if(!dayData[dk2].routine)dayData[dk2].routine={};
+  dayData[dk2].routine[id]=!dayData[dk2].routine[id];save();renderTargets();
+}
+function saveWeight(dk2){
+  if(!isOwner){showLoginModal();return;}
+  const v=parseFloat(document.getElementById('weight-inp').value)||null;
+  if(!dayData[dk2])dayData[dk2]={};dayData[dk2].weight=v;save();
+  const btn=document.querySelector('button[onclick*="saveWeight"]');
+  if(btn){btn.textContent='Saved ✓';btn.style.color='var(--grn)';setTimeout(()=>{btn.textContent='Save';btn.style.color=''},2000);}
+}
+function saveDiary(dk2){
+  if(!isOwner){showLoginModal();return;}
+  const v=document.getElementById('diary-inp').value;
+  if(!dayData[dk2])dayData[dk2]={};dayData[dk2].diary=v;save();
+  const btn=document.querySelector('button[onclick*="saveDiary"]');
+  if(btn){btn.textContent='Saved ✓';btn.style.color='var(--grn)';setTimeout(()=>{btn.textContent='Save';btn.style.color=''},2000);}
+}
+function saveEssay(dk2){
+  if(!isOwner){showLoginModal();return;}
+  const link=document.getElementById('essay-link').value;
+  const essay=document.getElementById('essay-text').value;
+  if(!dayData[dk2])dayData[dk2]={};if(!dayData[dk2].aeon)dayData[dk2].aeon={};
+  dayData[dk2].aeon.link=link;dayData[dk2].aeon.essay=essay;save();
+}
+async function scoreEssay(dk2){
+  if(isScoring)return;isScoring=true;
+  const link=document.getElementById('essay-link').value;
+  let essay=document.getElementById('essay-text').value;
+  if(!essay.trim()){isScoring=false;alert('Write your essay first.');return;}
+  // Truncate at 2000 words
+  const words=essay.trim().split(/\s+/);
+  const wasTruncated=words.length>2000;
+  if(wasTruncated)essay=words.slice(0,2000).join(' ')+'...';
+  const btn=document.querySelector('button[onclick*="scoreEssay"]');
+  const res=document.getElementById('score-result');
+  if(btn){btn.textContent='Scoring…';btn.disabled=true;}
+  if(res){res.className='score-result vis';res.innerHTML=wasTruncated?'<div style="color:var(--ora);font-size:10px;margin-bottom:6px">⚠ Essay truncated to 2000 words for scoring</div>Analysing...':'Analysing your essay...';}
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:700,messages:[{role:'user',content:
+        `You are a rigorous academic writing coach. Evaluate this essay response.
+${link?`Article: ${link}`:''}
+Student's response:
+"""
+${essay}
+"""
+Respond EXACTLY in this format:
+READING: X/10
+WRITING: X/10
+STRENGTHS:
+- [point 1]
+- [point 2]
+IMPROVE:
+- [point 1]
+- [point 2]
+VERDICT: [one sentence]`}]})});
+    const data=await r.json();const text=data.content[0].text;
+    const rm=text.match(/READING:\s*(\d+)/i);const wm=text.match(/WRITING:\s*(\d+)/i);
+    const rs=rm?rm[1]:'—';const ws=wm?wm[1]:'—';
+    if(!dayData[dk2])dayData[dk2]={};if(!dayData[dk2].aeon)dayData[dk2].aeon={};
+    Object.assign(dayData[dk2].aeon,{link:document.getElementById('essay-link').value,essay:document.getElementById('essay-text').value,scoreResult:text.replace(/\n/g,'<br>'),readScore:rs,writeScore:ws});
+    save();
+    if(res)res.innerHTML=`${wasTruncated?'<div style="color:var(--ora);font-size:10px;margin-bottom:6px">⚠ Scored on first 2000 words</div>':''}<div class="score-chips"><span class="sc-chip chip-r">Reading: ${rs}/10</span><span class="sc-chip chip-w">Writing: ${ws}/10</span></div>${text.replace(/\n/g,'<br>')}`;
+    if(btn){btn.textContent='Score with AI ✦';btn.disabled=false;}
+    isScoring=false;
+  }catch(e){
+    if(res)res.textContent='Scoring failed. Check connection.';
+    if(btn){btn.textContent='Score with AI ✦';btn.disabled=false;}
+    isScoring=false;
+  }
+}
+
+// ── TAB 3: ANALYTICS & HISTORY ──
+let viewDate=new Date();
+let anaView='week';
+
+function renderAnalytics(){
+  const vk=dkey(viewDate);const isToday=vk===today();
+  const dateStr=viewDate.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+  // Build 14-day data
+  const chartLabels=[],studyHrs=[],routinePcts=[],readScores=[],writeScores=[],weights=[];
+  for(let i=13;i>=0;i--){
+    const d=addDays(new Date(),-i);const dk2=dkey(d);const dd=dayData[dk2]||{};
+    const autoM=getAutoStudyMinsForDate(dk2);
+    chartLabels.push(d.toLocaleDateString('en-IN',{day:'numeric',month:'short'}));
+    studyHrs.push(parseFloat(((dd.studyMins||autoM)/60).toFixed(1)));
+    routinePcts.push(Math.round(Object.keys(dd.routine||{}).filter(k=>(dd.routine||{})[k]).length/LIFESTYLE.length*100));
+    readScores.push(parseFloat((dd.aeon||{}).readScore)||null);
+    writeScores.push(parseFloat((dd.aeon||{}).writeScore)||null);
+    weights.push((dd.weight)||null);
+  }
+
+  let h=`<div class="view-tabs">
+    <div class="vtab ${anaView==='week'?'active':''}" onclick="setAnaView('week')">Weekly</div>
+    <div class="vtab ${anaView==='charts'?'active':''}" onclick="setAnaView('charts')">Charts</div>
+    <div class="vtab ${anaView==='planner'?'active':''}" onclick="setAnaView('planner')">📅 Planner</div>
+    <div class="vtab ${anaView==='day'?'active':''}" onclick="setAnaView('day')">Day Detail</div>
+    <div class="vtab ${anaView==='month'?'active':''}" onclick="setAnaView('month')">Monthly</div>
+    <div class="vtab ${anaView==='weight'?'active':''}" onclick="setAnaView('weight')">Weight</div>
+    <div class="vtab ${anaView==='essay'?'active':''}" onclick="setAnaView('essay')">Essay Scores</div>
+  </div>`;
+
+  if(anaView==='week'){
+    // Week grid for current week
+    const mon=addDays(new Date(),-((new Date().getDay()+6)%7));
+    h+=`<div class="sh">This week</div><div class="week-grid">`;
+    for(let i=0;i<7;i++){
+      const d=addDays(mon,i);const dk2=dkey(d);const dd=dayData[dk2]||{};
+      const autoM=getAutoStudyMinsForDate(dk2);const hrs=(dd.studyMins||autoM)/60;
+      const isTd=dk2===today();const isFut=d>new Date();
+      const rDone=Object.keys(dd.routine||{}).filter(k=>(dd.routine||{})[k]).length;
+      h+=`<div class="wday ${isTd?'wday-today':''}">
+        <div class="wday-label">${d.toLocaleDateString('en-IN',{weekday:'short'})}</div>
+        <div class="wday-date">${d.getDate()}</div>
+        ${isFut?`<div class="wday-hrs" style="color:var(--txt3)">—</div>`:`<div class="wday-hrs" style="color:${hrs>=7?'var(--grn)':hrs>=4?'var(--gold2)':'var(--txt2)'}">${hrs.toFixed(1)}h</div>`}
+        <div class="wday-sub">${isFut?'':rDone+'/'+ LIFESTYLE.length+' ✓'}</div>
+        <div class="wday-dot ${!isFut&&hrs>=TIGHT_DAILY_MINS/60?'active':''}"></div>
+      </div>`;
+    }
+    h+=`</div>`;
+    // Weekly summary
+    let wHrs=0,wVids=0,wEssays=0,wStreak=0;
+    for(let i=0;i<7;i++){const dk2=dkey(addDays(mon,i));const dd=dayData[dk2]||{};wHrs+=(dd.studyMins||getAutoStudyMinsForDate(dk2))/60;if(dd.aeon&&dd.aeon.readScore)wEssays++;}
+    h+=`<div class="weekly-summary">
+      <div style="font-size:12px;font-weight:500;color:var(--txt)">Week Summary</div>
+      <div class="ws-grid">
+        <div class="ws-stat"><div class="ws-val">${wHrs.toFixed(1)}h</div><div class="ws-key">Total study</div></div>
+        <div class="ws-stat"><div class="ws-val">${getStreak()}</div><div class="ws-key">Day streak</div></div>
+        <div class="ws-stat"><div class="ws-val">${wEssays}</div><div class="ws-key">Essays scored</div></div>
+        <div class="ws-stat"><div class="ws-val">${daysTo(DEADLINE)}d</div><div class="ws-key">To Jul 15</div></div>
+      </div>
+    </div>`;
+    // 14-day charts
+    h+=`<div class="ana-grid">
+      <div class="ana-card"><div class="ana-title">Study hours — 14 days</div><div class="chart-wrap"><canvas id="ch1" role="img" aria-label="Study hours chart"></canvas></div></div>
+      <div class="ana-card"><div class="ana-title">Routine completion — 14 days</div><div class="chart-wrap"><canvas id="ch2" role="img" aria-label="Routine completion chart"></canvas></div></div>
+    </div>`;
+    document.getElementById('panel-analytics').innerHTML=h;
+    loadChartJS(()=>{renderChart('ch1','bar',chartLabels,studyHrs,'#c9a84c',v=>v+'h',11);renderChart('ch2','line',chartLabels,routinePcts,'#4ade80',v=>v+'%',100);});
+    return;
+  }
+
+  if(anaView==='day'){
+    h+=`<div class="date-nav">
+      <button class="dnb" onclick="shiftDate(-7)">← 7d</button>
+      <button class="dnb" onclick="shiftDate(-1)">← prev</button>
+      <span class="dn-display">${dateStr}</span>
+      <button class="dnb" onclick="shiftDate(1)">next →</button>
+      <button class="dnb" onclick="shiftDate(7)">7d →</button>
+      <button class="dnb" onclick="viewDate=new Date();renderAnalytics()">Today</button>
+    </div>`;
+    const dl=dayData[vk]||{};
+    const autoM=getAutoStudyMinsForDate(vk);
+    const studiedMins=dl.studyMins||autoM;
+    const rDone=LIFESTYLE.filter(l=>(dl.routine||{})[l.id]).length;
+    // Day stats row
+    h+=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
+      <div class="ana-card" style="text-align:center"><div style="font-family:var(--fd);font-size:20px;font-weight:700;color:var(--gold2)">${fmt(studiedMins)}</div><div style="font-family:var(--fm);font-size:9px;color:var(--txt3);margin-top:3px;text-transform:uppercase">Studied</div></div>
+      <div class="ana-card" style="text-align:center"><div style="font-family:var(--fd);font-size:20px;font-weight:700;color:var(--grn)">${rDone}/${LIFESTYLE.length}</div><div style="font-family:var(--fm);font-size:9px;color:var(--txt3);margin-top:3px;text-transform:uppercase">Routine</div></div>
+      <div class="ana-card" style="text-align:center"><div style="font-family:var(--fd);font-size:20px;font-weight:700;color:var(--blu)">${(dl.aeon||{}).readScore||'—'}/10</div><div style="font-family:var(--fm);font-size:9px;color:var(--txt3);margin-top:3px;text-transform:uppercase">Reading</div></div>
+      <div class="ana-card" style="text-align:center"><div style="font-family:var(--fd);font-size:20px;font-weight:700;color:var(--prp)">${(dl.aeon||{}).writeScore||'—'}/10</div><div style="font-family:var(--fm);font-size:9px;color:var(--txt3);margin-top:3px;text-transform:uppercase">Writing</div></div>
+    </div>`;
+    // Routine mini grid
+    h+=`<div class="day-detail-card"><div class="ddc-hdr"><span class="ddc-title">Routine</span><span class="ddc-date">${dateStr}</span></div>
+      <div class="routine-mini">`;
+    LIFESTYLE.forEach(item=>{
+      const d=!!((dl.routine||{})[item.id]);
+      h+=`<div class="rm-item ${d?'rm-done':''}"><div>${item.icon}</div><div class="rm-label">${item.label.split(' ')[0]}</div></div>`;
+    });
+    h+=`</div></div>`;
+    // Weight
+    h+=`<div class="day-detail-card"><div class="ddc-hdr"><span class="ddc-title">⚖️ Weight</span></div>
+      <span style="font-family:var(--fd);font-size:24px;font-weight:700;color:var(--gold2)">${dl.weight?dl.weight+' kg':'Not logged'}</span>
+      ${dl.weight?`<span style="font-family:var(--fm);font-size:11px;color:var(--txt3);margin-left:10px">${(dl.weight-WEIGHT_TARGET>0?'+':'')}${(dl.weight-WEIGHT_TARGET).toFixed(1)} kg from ${WEIGHT_TARGET}kg target</span>`:''}
+    </div>`;
+    // Diary
+    if(dl.diary)h+=`<div class="day-detail-card"><div class="ddc-hdr"><span class="ddc-title">📓 Diary</span></div><div style="font-size:12px;color:var(--txt2);line-height:1.7;white-space:pre-wrap">${dl.diary}</div></div>`;
+    // Essay
+    if((dl.aeon||{}).scoreResult)h+=`<div class="day-detail-card"><div class="ddc-hdr"><span class="ddc-title">📝 Essay Score</span></div>
+      <div class="score-chips"><span class="sc-chip chip-r">Reading: ${dl.aeon.readScore}/10</span><span class="sc-chip chip-w">Writing: ${dl.aeon.writeScore}/10</span></div>
+      <div style="font-size:11px;color:var(--txt2);line-height:1.7;margin-top:8px">${dl.aeon.scoreResult}</div>
+    </div>`;
+    document.getElementById('panel-analytics').innerHTML=h;
+    return;
+  }
+
+  if(anaView==='weight'){
+    // Weight chart
+    h+=`<div class="ana-card" style="margin-bottom:14px"><div class="ana-title">Weight trend — last 30 days (target: ${WEIGHT_TARGET}kg by Jul 20)</div><div class="chart-wrap" style="height:200px"><canvas id="ch-weight" role="img" aria-label="Weight trend chart"></canvas></div></div>`;
+    // Weight log table
+    h+=`<div class="ana-card"><div class="ana-title">Log</div>`;
+    let hasW=false;
+    for(let i=29;i>=0;i--){const d=addDays(new Date(),-i);const dk2=dkey(d);const dd=dayData[dk2]||{};if(dd.weight){hasW=true;h+=`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--bdr);font-size:12px"><span style="font-family:var(--fm);color:var(--txt3)">${d.toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</span><span style="color:${dd.weight<=WEIGHT_TARGET?'var(--grn)':'var(--gold2)'}"><b>${dd.weight}</b> kg</span></div>`;}}
+    if(!hasW)h+=`<div style="color:var(--txt3);font-size:12px;text-align:center;padding:20px">No weight logged yet. Log daily from Tab 02.</div>`;
+    h+=`</div>`;
+    document.getElementById('panel-analytics').innerHTML=h;
+    // Weight chart data
+    const wLabels=[],wData=[],wTarget=[];
+    for(let i=29;i>=0;i--){
+      const d=addDays(new Date(),-i);const dk2=dkey(d);const dd=dayData[dk2]||{};
+      wLabels.push(d.toLocaleDateString('en-IN',{day:'numeric',month:'short'}));
+      wData.push(dd.weight||null);
+      // Target line: linear from today's weight to 93 by Jul 20
+      const daysToTarget=Math.max(0,Math.ceil((WEIGHT_DEADLINE-d)/864e5));
+      const startWeight=dayData[today()]?.weight||100;
+      wTarget.push(parseFloat((WEIGHT_TARGET+(startWeight-WEIGHT_TARGET)*(daysToTarget/Math.ceil((WEIGHT_DEADLINE-START)/864e5))).toFixed(1)));
+    }
+    loadChartJS(()=>{
+      const c=document.getElementById('ch-weight');if(!c)return;
+      if(c._c)c._c.destroy();
+      c._c=new Chart(c,{type:'line',data:{labels:wLabels,datasets:[
+        {label:'Actual',data:wData,borderColor:'#e8c97a',backgroundColor:'rgba(232,201,122,0.08)',fill:true,tension:0.4,pointBackgroundColor:'#e8c97a',pointRadius:3,spanGaps:true},
+        {label:'Target',data:wTarget,borderColor:'rgba(248,113,113,0.5)',borderDash:[4,4],fill:false,tension:0.1,pointRadius:0}
+      ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#8a8880',font:{size:10}}}},scales:{x:{ticks:{color:'#4a4845',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#4a4845',font:{size:9},callback:v=>v+'kg'},grid:{color:'rgba(255,255,255,0.04)'},beginAtZero:false}}}});
+    });
+    return;
+  }
+
+  if(anaView==='essay'){
+    h+=`<div class="ana-grid">
+      <div class="ana-card"><div class="ana-title">Reading score — 14 days</div><div class="chart-wrap"><canvas id="ch-read" role="img" aria-label="Reading score chart"></canvas></div></div>
+      <div class="ana-card"><div class="ana-title">Writing score — 14 days</div><div class="chart-wrap"><canvas id="ch-write" role="img" aria-label="Writing score chart"></canvas></div></div>
+    </div>`;
+    // Essay log
+    h+=`<div class="ana-card"><div class="ana-title">All essay sessions</div>`;
+    let hasE=false;
+    for(let i=59;i>=0;i--){const d=addDays(new Date(),-i);const dk2=dkey(d);const dd=dayData[dk2]||{};
+      if((dd.aeon||{}).readScore){hasE=true;
+        h+=`<div style="padding:10px 0;border-bottom:1px solid var(--bdr)">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+            <span style="font-family:var(--fm);font-size:10px;color:var(--txt3)">${d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})}</span>
+            <div class="score-chips" style="margin:0"><span class="sc-chip chip-r">R: ${dd.aeon.readScore}/10</span><span class="sc-chip chip-w">W: ${dd.aeon.writeScore}/10</span></div>
+          </div>
+          ${dd.aeon.link?`<div style="font-size:10px;color:var(--txt3);font-family:var(--fm);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${dd.aeon.link}</div>`:''}
+        </div>`;
+      }
+    }
+    if(!hasE)h+=`<div style="color:var(--txt3);font-size:12px;text-align:center;padding:20px">No essays scored yet.</div>`;
+    h+=`</div>`;
+    document.getElementById('panel-analytics').innerHTML=h;
+    loadChartJS(()=>{renderChart('ch-read','line',chartLabels,readScores,'#60a5fa',v=>v+'/10',10,true);renderChart('ch-write','line',chartLabels,writeScores,'#a78bfa',v=>v+'/10',10,true);});
+    return;
+  }
+
+  // ── CHARTS VIEW ──
+  if(anaView==='charts'){
+    // Subject donut rings grid
+    h+=`<div class="sh">Subject completion rings</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px">`;
+    SYL.forEach(t=>{
+      const s=getStats(t);const circ=2*Math.PI*28;const offset=circ-(circ*s.pct/100);
+      const col=s.pct===100?'#4ade80':s.pct>50?'#c9a84c':'#60a5fa';
+      h+=`<div style="background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r);padding:12px;text-align:center">
+        <div style="position:relative;width:70px;height:70px;margin:0 auto 8px">
+          <svg width="70" height="70" viewBox="0 0 70 70" style="transform:rotate(-90deg)">
+            <circle cx="35" cy="35" r="28" fill="none" stroke="var(--s4)" stroke-width="7"/>
+            <circle cx="35" cy="35" r="28" fill="none" stroke="${col}" stroke-width="7" stroke-linecap="round"
+              stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}" style="transition:stroke-dashoffset .6s"/>
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+            <span style="font-family:var(--fd);font-size:14px;font-weight:700;color:${col};line-height:1">${s.pct}%</span>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--txt2);font-weight:500">${t.emoji} ${t.title.split(' ').slice(0,2).join(' ')}</div>
+        <div style="font-family:var(--fm);font-size:9px;color:var(--txt3);margin-top:2px">${s.done}/${s.tot} done</div>
+      </div>`;
+    });
+    h+=`</div>`;
+
+    // Burndown chart
+    h+=`<div class="ana-grid" style="margin-bottom:12px">
+      <div class="ana-card"><div class="ana-title">📉 Video burndown — Jun 8 to Jul 15</div><div class="chart-wrap" style="height:160px"><canvas id="ch-burn" role="img" aria-label="Burndown chart"></canvas></div></div>
+      <div class="ana-card"><div class="ana-title">🔥 Streak flame — study hours/day</div><div class="chart-wrap" style="height:160px"><canvas id="ch-streak" role="img" aria-label="Streak flame chart"></canvas></div></div>
+    </div>`;
+    h+=`<div class="ana-card" style="margin-bottom:12px"><div class="ana-title">📊 Study hours by subject — last 14 days (stacked)</div><div class="chart-wrap" style="height:180px"><canvas id="ch-stacked" role="img" aria-label="Stacked subject chart"></canvas></div></div>`;
+
+    document.getElementById('panel-analytics').innerHTML=h;
+
+    // Burndown data
+    const g2=getGlobal();const totalVidsAll=g2.tot;const totalDone=g2.done;
+    const burnLabels=[],burnActual=[],burnIdeal=[];
+    const plannerDays=Math.ceil((DEADLINE-START)/864e5);
+    const idealPerDay=totalVidsAll/plannerDays;
+    for(let i=0;i<=plannerDays;i++){
+      const d=addDays(START,i);
+      burnLabels.push(i%5===0?d.toLocaleDateString('en-IN',{day:'numeric',month:'short'}):'');
+      burnIdeal.push(Math.round(Math.max(0,totalVidsAll-idealPerDay*i)));
+      // actual: count videos remaining as of that date (approximate from progress — use total remaining for future dates)
+      const dk2=dkey(d);
+      if(d<=new Date()){
+        // Use current remaining for all past dates as approximation (actual tracking would need history)
+        burnActual.push(getPending().length);
+      } else {
+        burnActual.push(null);
+      }
+    }
+    // Better burndown: project based on daily completion rate
+    const donePerDay=[];
+    for(let i=1;i<=14;i++){const dk2=dkey(addDays(new Date(),-i));const dd=dayData[dk2]||{};donePerDay.push((dd.studyMins||0)/60*2.5);}
+    const avgDone=donePerDay.reduce((a,b)=>a+b,0)/Math.max(1,donePerDay.filter(x=>x>0).length)||0;
+
+    // Streak flame data (last 21 days)
+    const flameLabels=[],flameData=[],flameColors=[];
+    for(let i=20;i>=0;i--){
+      const d=addDays(new Date(),-i);const dk2=dkey(d);const dd=dayData[dk2]||{};
+      const hrs=(dd.studyMins||0)/60;
+      flameLabels.push(d.toLocaleDateString('en-IN',{day:'numeric',month:'short'}));
+      flameData.push(parseFloat(hrs.toFixed(1)));
+      flameColors.push(hrs>=TIGHT_DAILY_MINS/60?'rgba(74,222,128,0.8)':hrs>=4?'rgba(201,168,76,0.8)':'rgba(248,113,113,0.5)');
+    }
+
+    loadChartJS(()=>{
+      // Burndown
+      const cb=document.getElementById('ch-burn');if(cb){if(cb._c)cb._c.destroy();
+        cb._c=new Chart(cb,{type:'line',data:{labels:burnLabels,datasets:[
+          {label:'Ideal',data:burnIdeal,borderColor:'rgba(201,168,76,0.4)',borderDash:[4,3],fill:false,tension:0.1,pointRadius:0,borderWidth:1.5},
+          {label:'Remaining',data:burnActual,borderColor:'#f87171',backgroundColor:'rgba(248,113,113,0.08)',fill:true,tension:0.3,pointRadius:0,spanGaps:false}
+        ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#8a8880',font:{size:9},boxWidth:12}}},scales:{x:{ticks:{color:'#4a4845',font:{size:8},maxTicksLimit:8},grid:{color:'rgba(255,255,255,0.03)'}},y:{ticks:{color:'#4a4845',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'},beginAtZero:true}}}});}
+      // Streak flame
+      const cs=document.getElementById('ch-streak');if(cs){if(cs._c)cs._c.destroy();
+        cs._c=new Chart(cs,{type:'bar',data:{labels:flameLabels,datasets:[{data:flameData,backgroundColor:flameColors,borderRadius:3,borderWidth:0}]},
+          options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#4a4845',font:{size:8},maxRotation:45},grid:{display:false}},y:{ticks:{color:'#4a4845',font:{size:9},callback:v=>v+'h'},grid:{color:'rgba(255,255,255,0.04)'},beginAtZero:true,max:11}}}});}
+      // Stacked bar by subject (14 days)
+      const stackLabels=[];
+      for(let i=13;i>=0;i--)stackLabels.push(addDays(new Date(),-i).toLocaleDateString('en-IN',{day:'numeric',month:'short'}));
+      const SUBJ_COLORS_STACKED={'quant':'rgba(201,168,76,0.7)','econ':'rgba(74,222,128,0.7)','fsa':'rgba(96,165,250,0.7)','corp':'rgba(251,146,60,0.7)','equity':'rgba(167,139,250,0.7)','fixed':'rgba(248,113,113,0.7)','deriv':'rgba(52,211,153,0.7)','alt':'rgba(251,191,36,0.7)','port':'rgba(129,140,248,0.7)','ethics':'rgba(110,231,183,0.7)'};
+      // For now show total hours split evenly across active subjects as approximation
+      const stackDatasets=SYL.slice(0,5).map(t=>({
+        label:t.title.split(' ')[0],
+        data:Array.from({length:14},(_,i)=>{const dk2=dkey(addDays(new Date(),-(13-i)));const dd=dayData[dk2]||{};return parseFloat(((dd.studyMins||0)/60/5).toFixed(2));} ),
+        backgroundColor:SUBJ_COLORS_STACKED[t.id]||'rgba(100,100,100,0.5)',borderWidth:0,borderRadius:2
+      }));
+      const cst=document.getElementById('ch-stacked');if(cst){if(cst._c)cst._c.destroy();
+        cst._c=new Chart(cst,{type:'bar',data:{labels:stackLabels,datasets:stackDatasets},
+          options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,labels:{color:'#8a8880',font:{size:9},boxWidth:10}}},scales:{x:{stacked:true,ticks:{color:'#4a4845',font:{size:8},maxRotation:45},grid:{display:false}},y:{stacked:true,ticks:{color:'#4a4845',font:{size:9},callback:v=>v+'h'},grid:{color:'rgba(255,255,255,0.04)'},beginAtZero:true}}}});}
+    });
+    return;
+  }
+
+  // ── PLANNER VIEW ──
+  if(anaView==='planner'){
+    const plan=buildPlanner();
+    const SUBJ_COLORS={'quant':'#c9a84c','econ':'#4ade80','fsa':'#60a5fa','corp':'#fb923c','equity':'#a78bfa','fixed':'#f87171','deriv':'#34d399','alt':'#fbbf24','port':'#818cf8','ethics':'#6ee7b7'};
+    const SUBJ_SHORT={'quant':'QM','econ':'EC','fsa':'FSA','corp':'CI','equity':'EQ','fixed':'FI','deriv':'DV','alt':'AI','port':'PM','ethics':'ET'};
+    h+=`<div style="background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r);padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <span style="font-family:var(--fm);font-size:10px;color:var(--txt3)">SUBJECT KEY:</span>
+      ${SYL.map(t=>`<span style="font-family:var(--fm);font-size:9px;background:${SUBJ_COLORS[t.id]}22;color:${SUBJ_COLORS[t.id]};border:1px solid ${SUBJ_COLORS[t.id]}44;padding:2px 7px;border-radius:99px">${SUBJ_SHORT[t.id]} ${t.emoji}</span>`).join('')}
+    </div>`;
+    h+=`<div style="display:flex;flex-direction:column;gap:4px">`;
+    const todayStr=today();
+    const deadlineStr=dkey(DEADLINE);
+    plan.forEach((day,di)=>{
+      if(day.dateStr>deadlineStr&&di>0&&plan[di-1].dateStr>=deadlineStr)return;// stop after Jul 15
+      const isToday2=day.dateStr===todayStr;
+      const isPast=day.date<new Date()&&!isToday2;
+      const isPastDeadline=day.dateStr>deadlineStr;
+      const dayLabel=day.date.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'});
+      const subjTags=day.subjectIds.map(id=>`<span style="font-family:var(--fm);font-size:8px;background:${SUBJ_COLORS[id]||'#888'}22;color:${SUBJ_COLORS[id]||'#888'};border:1px solid ${SUBJ_COLORS[id]||'#888'}33;padding:1px 5px;border-radius:3px">${SUBJ_SHORT[id]||id}</span>`).join(' ');
+      // Build video label list
+      const vidLabels=day.vids.map(v=>`<span style="font-family:var(--fm);font-size:9px;color:${isPast?'var(--txt3)':'var(--txt2)'}">${v.s.vidLabel}</span>`).join(' · ');
+      const borderCol=isToday2?'rgba(201,168,76,0.4)':isPastDeadline?'rgba(248,113,113,0.2)':isPast?'var(--bdr)':'var(--bdr)';
+      const bgCol=isToday2?'rgba(201,168,76,0.06)':isPastDeadline?'rgba(248,113,113,0.04)':'var(--s2)';
+      h+=`<div style="background:${bgCol};border:1px solid ${borderCol};border-radius:var(--rs);padding:9px 12px;display:flex;align-items:flex-start;gap:10px" onclick="viewDate=new Date('${day.dateStr}');setAnaView('day')">
+        <div style="min-width:80px;flex-shrink:0">
+          <div style="font-family:var(--fm);font-size:10px;font-weight:500;color:${isToday2?'var(--gold2)':isPast?'var(--txt3)':'var(--txt)'}">${dayLabel}</div>
+          <div style="font-family:var(--fm);font-size:9px;color:var(--txt3);margin-top:1px">${fmt(day.totalMins)}</div>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="margin-bottom:3px">${subjTags}</div>
+          <div style="line-height:1.6;font-size:10px">${vidLabels}</div>
+          ${day.vids[0]?`<div style="font-size:10px;color:var(--txt3);margin-top:2px;font-family:var(--fm)">${day.vids[0].modTitle}${day.vids.length>1?' +more':''}</div>`:''}
+        </div>
+        ${isPast?'<span style="font-size:10px;color:var(--txt3)">past</span>':''}
+        ${isToday2?'<span style="font-family:var(--fm);font-size:9px;color:var(--gold2);background:var(--ga);border:1px solid rgba(201,168,76,0.2);padding:2px 6px;border-radius:3px">TODAY</span>':''}
+        ${isPastDeadline?'<span style="font-family:var(--fm);font-size:9px;color:var(--red)">post Jul 15</span>':''}
+      </div>`;
+    });
+    h+=`</div>`;
+    document.getElementById('panel-analytics').innerHTML=h;
+    return;
+  }
+
+  if(anaView==='month'){
+    // Monthly heatmap — last 42 days
+    h+=`<div class="sh">Last 6 weeks — study hours heatmap</div>`;
+    h+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:16px">`;
+    ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(d=>h+=`<div style="font-family:var(--fm);font-size:9px;color:var(--txt3);text-align:center;padding:2px">${d}</div>`);
+    for(let i=41;i>=0;i--){
+      const d=addDays(new Date(),-i);const dk2=dkey(d);const dd=dayData[dk2]||{};
+      const autoM=getAutoStudyMinsForDate(dk2);const hrs=(dd.studyMins||autoM)/60;
+      const isFut=d>new Date();
+      const intensity=isFut?0:Math.min(1,hrs/9);
+      const col=isFut?'var(--s3)':`rgba(201,168,76,${0.08+intensity*0.75})`;
+      h+=`<div title="${d.toLocaleDateString('en-IN',{day:'numeric',month:'short'})}: ${hrs.toFixed(1)}h" style="aspect-ratio:1;background:${col};border-radius:3px;border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-family:var(--fm);font-size:8px;color:${intensity>0.5?'rgba(0,0,0,0.7)':'var(--txt3)'}">
+        ${isFut?'':hrs>=1?hrs.toFixed(0)+'h':'·'}
+      </div>`;
+    }
+    h+=`</div>`;
+    // Monthly totals
+    let mHrs=0,mDays=0;
+    for(let i=29;i>=0;i--){const dk2=dkey(addDays(new Date(),-i));const dd=dayData[dk2]||{};const autoM=getAutoStudyMinsForDate(dk2);const h2=(dd.studyMins||autoM)/60;mHrs+=h2;if(h2>=TIGHT_DAILY_MINS/60)mDays++;}
+    h+=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
+      <div class="ana-card" style="text-align:center"><div style="font-family:var(--fd);font-size:22px;font-weight:700;color:var(--gold2)">${mHrs.toFixed(1)}h</div><div style="font-family:var(--fm);font-size:9px;color:var(--txt3);margin-top:3px;text-transform:uppercase">Hours this month</div></div>
+      <div class="ana-card" style="text-align:center"><div style="font-family:var(--fd);font-size:22px;font-weight:700;color:var(--grn)">${mDays}</div><div style="font-family:var(--fm);font-size:9px;color:var(--txt3);margin-top:3px;text-transform:uppercase">On-target days</div></div>
+      <div class="ana-card" style="text-align:center"><div style="font-family:var(--fd);font-size:22px;font-weight:700;color:var(--blu)">${getStreak()}</div><div style="font-family:var(--fm);font-size:9px;color:var(--txt3);margin-top:3px;text-transform:uppercase">Current streak</div></div>
+    </div>`;
+    document.getElementById('panel-analytics').innerHTML=h;
+    return;
+  }
+}
+
+function getAutoStudyMinsForDate(dateStr){
+  // For historical dates, we can't run buildBlocks accurately
+  // Use stored studyMins if available, otherwise return 0
+  return (dayData[dateStr]||{}).studyMins||0;
+}
+
+function setAnaView(v){anaView=v;renderAnalytics();}
+function shiftDate(n){
+  viewDate=addDays(viewDate,n);
+  if(viewDate<START)viewDate=new Date(START);
+  if(viewDate>new Date())viewDate=new Date();
+  renderAnalytics();
+}
+
+function loadChartJS(cb){
+  if(window.Chart){cb();}
+  else{const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';s.onload=cb;s.onerror=()=>console.warn('Chart.js failed to load');document.head.appendChild(s);}
+}
+function renderChart(id,type,labels,data,color,tickFmt,maxY,spanGaps=false){
+  const c=document.getElementById(id);if(!c)return;
+  if(c._c)c._c.destroy();
+  const isBar=type==='bar';
+  c._c=new Chart(c,{type,data:{labels,datasets:[{data,backgroundColor:isBar?color+'4d':color+'12',borderColor:color,borderWidth:isBar?1:2,borderRadius:isBar?3:0,fill:!isBar,tension:0.4,pointBackgroundColor:color,pointRadius:3,spanGaps}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#4a4845',font:{size:9}},grid:{color:'rgba(255,255,255,0.04)'}},
+              y:{ticks:{color:'#4a4845',font:{size:9},callback:tickFmt},grid:{color:'rgba(255,255,255,0.04)'},beginAtZero:false,max:maxY,min:0}}}});
+}
+
+// ── TAB SWITCHING ──
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['cfa','targets','analytics'][i]===name));
+  document.querySelectorAll('.panel').forEach((p,i)=>p.classList.toggle('active',['panel-cfa','panel-targets','panel-analytics'][i]===`panel-${name}`));
+  if(name==='cfa')renderCFA();
+  if(name==='targets')renderTargets();
+  if(name==='analytics')renderAnalytics();
+}
+
+// ── COUNTDOWN ──
+function updateChips(){
+  document.getElementById('chip-jul').textContent=`${daysTo(DEADLINE)}d to Jul 15`;
+  document.getElementById('chip-exam').textContent=`${daysTo(EXAM)}d to exam`;
+}
+
+// ── KEYBOARD SHORTCUTS ──
+let kbFocusBlk=0,kbFocusVid=0;
+document.addEventListener('keydown',e=>{
+  if(!document.getElementById('panel-targets').classList.contains('active'))return;
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+  const blocks=buildBlocks(today());
+  if(e.code==='Space'){
+    e.preventDefault();
+    const blk=blocks[kbFocusBlk];if(!blk)return;
+    const vid=blk.vids[kbFocusVid];if(!vid)return;
+    toggleVidT(vid.key);
+    // advance focus
+    if(kbFocusVid<blk.vids.length-1)kbFocusVid++;
+  }
+  if(e.code==='KeyN'){
+    e.preventDefault();
+    if(kbFocusBlk<blocks.length-1){kbFocusBlk++;kbFocusVid=0;}
+    // open block
+    ui.blkOpen[kbFocusBlk]=true;
+    const body=document.getElementById('blk-'+kbFocusBlk);
+    if(body)body.classList.add('open');
+    const el=document.getElementById(`blkcard-${kbFocusBlk}`);
+    if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
+  }
+  if(e.code==='KeyT'){
+    e.preventDefault();
+    toggleTread(kbFocusBlk);
+  }
+});
+
+// ── INIT ──
+loadAll();
+renderCFA();
+updateChips();
+checkStorage();
+setInterval(updateChips,60000);
+// Auth + cloud sync on startup
+initAuth().then(() => {
+  cloudLoad().then(() => {
+    renderCFA();
+    // If returning from Google OAuth, also render targets to unlock UI
+    if (isOwner) renderAuthBadge();
+  });
+});
+// Auto-refresh targets every minute to update current block highlighting
+setInterval(()=>{if(document.getElementById('panel-targets').classList.contains('active'))renderTargets();},60000);
+</script>
+</body>
+</html>
