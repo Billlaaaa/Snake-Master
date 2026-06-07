@@ -299,6 +299,7 @@ html,body{height:100%;background:var(--bg);color:var(--txt);font-family:var(--ff
     </div>
     <div class="topbar-right">
       <div id="auth-badge"></div>
+      <div id="notif-btn"></div>
       <div style="display:flex;align-items:center;gap:5px;font-family:var(--fm);font-size:10px;color:var(--txt3)">
         <span id="sync-dot" style="width:7px;height:7px;border-radius:50%;background:#4a4845;display:inline-block;transition:background .3s"></span>
         <span id="sync-label"></span>
@@ -640,10 +641,11 @@ const LIFESTYLE=[
   {id:'relax',time:'7:00 PM',icon:'🎧',label:'Relax / Prep',sub:'Wind down from study'},
   {id:'preworkout',time:'7:20 PM',icon:'🍳',label:'Pre-Workout: 5 Egg Whites',sub:'30-40 min before gym'},
   {id:'gym',time:'7:30 PM',icon:'💪',label:'Gym Session',sub:'7:30 PM – 9:30 PM · 2 hours'},
-  {id:'dinner',time:'9:30 PM',icon:'🍽️',label:'Shower + Dinner',sub:'Homemade meal · High protein'},
-  {id:'reading',time:'10:00 PM',icon:'📰',label:'Aeon Essays + Bloomberg',sub:'10:00 PM – 11:00 PM'},
-  {id:'supps',time:'11:00 PM',icon:'💊',label:'Magnesium + Psyllium Husk',sub:'Before bed supplements'},
-  {id:'plan',time:'11:20 PM',icon:'🗒️',label:'Plan Next Day',sub:'Set targets · Review schedule'}
+  {id:'postworkout',time:'9:30 PM',icon:'🥤',label:'Post-Workout Protein Shake',sub:'2 scoops × 25g fermented yeast protein'},
+  {id:'dinner',time:'9:45 PM',icon:'🍽️',label:'Shower + Dinner',sub:'Homemade meal · High protein'},
+  {id:'reading',time:'10:00 PM',icon:'📰',label:'Aeon Essays + Bloomberg',sub:'10:00 PM – 11:30 PM'},
+  {id:'supps',time:'11:30 PM',icon:'💊',label:'Magnesium + Psyllium Husk',sub:'Before bed supplements'},
+  {id:'plan',time:'11:40 PM',icon:'🗒️',label:'Plan Next Day + Log Diary & Weight',sub:'Set targets · Log weight · Write diary · Review schedule'}
 ];
 const ROUTINE_IDS=LIFESTYLE.map(l=>l.id);
 
@@ -1711,6 +1713,95 @@ document.addEventListener('keydown',e=>{
   }
 });
 
+// ── NOTIFICATIONS ──
+const NOTIF_SCHEDULE = [
+  {h:7, m:59, title:'📚 Block 1 in 1 min', body:'8:00 AM study block starting now.'},
+  {h:8, m:59, title:'📚 Block 2 in 1 min', body:'9:00 AM study block starting now.'},
+  {h:9, m:59, title:'📚 Block 3 in 1 min', body:'10:00 AM study block starting now.'},
+  {h:10,m:59, title:'📚 Block 4 in 1 min', body:'11:00 AM study block starting now.'},
+  {h:11,m:59, title:'📚 Block 5 in 1 min', body:'12:00 PM study block starting now.'},
+  {h:12,m:59, title:'📚 Block 6 in 1 min', body:'1:00 PM study block starting now.'},
+  {h:13,m:59, title:'📚 Block 7 in 1 min', body:'2:00 PM study block starting now.'},
+  {h:14,m:59, title:'📚 Block 8 in 1 min', body:'3:00 PM study block starting now.'},
+  {h:15,m:59, title:'📚 Block 9 in 1 min', body:'4:00 PM study block starting now.'},
+  {h:16,m:59, title:'📚 Block 10 in 1 min',body:'5:00 PM study block starting now.'},
+  {h:17,m:59, title:'📚 Block 11 in 1 min',body:'6:00 PM — last block. Finish strong.'},
+  {h:7, m:29, title:'🥚 Breakfast in 1 min',body:'5 eggs · 500ml milk · Multivitamin · Fish oil D3'},
+  {h:19,m:29, title:'💪 Gym in 1 minute',  body:'Pre-workout egg whites ready? 7:30 PM gym time.'},
+  {h:21,m:29, title:'🥤 Post-workout shake',body:'2 scoops fermented yeast protein — right now.'},
+  {h:21,m:59, title:'📰 Aeon + Bloomberg in 1 min', body:'10:00 PM – 11:30 PM reading block. Wind down.'},
+  {h:23,m:29, title:'📓 Log before sleep', body:'Enter weight + diary entry now — before winding down.'},
+  {h:23,m:29, title:'💊 Supplements now',  body:'Magnesium + Psyllium Husk before bed.'},
+  {h:23,m:39, title:'📋 Plan tomorrow',    body:'Set CFA targets for tomorrow. Log diary + weight done?'},
+];
+
+let _notifScheduled = false;
+let _lastFired = {};
+
+async function requestNotifPermission(){
+  if(!('Notification' in window))return false;
+  if(Notification.permission==='granted')return true;
+  if(Notification.permission==='denied')return false;
+  return (await Notification.requestPermission())==='granted';
+}
+
+function fireNotification(title,body){
+  if(Notification.permission!=='granted')return;
+  const n=new Notification(title,{
+    body,
+    icon:"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e0e10'/><text y='.9em' font-size='80' x='10'>%F0%9F%93%8A</text></svg>",
+    tag:title,
+    requireInteraction:false
+  });
+  n.onclick=()=>{window.focus();n.close();};
+}
+
+function scheduleNotifications(){
+  if(_notifScheduled)return;
+  _notifScheduled=true;
+  setInterval(()=>{
+    if(Notification.permission!=='granted')return;
+    const now=new Date();
+    const h=now.getHours(),m=now.getMinutes(),s=now.getSeconds();
+    if(s>15)return; // only fire in first 15s of each minute
+    NOTIF_SCHEDULE.forEach(item=>{
+      const key=h+':'+m+':'+item.title;
+      if(item.h===h&&item.m===m&&!_lastFired[key]){
+        _lastFired[key]=true;
+        // For block notifications, append current video info
+        let body=item.body;
+        if(item.title.includes('Block')){
+          const pending=getPending();
+          if(pending.length){body=pending[0].s.vidLabel+' · '+pending[0].s.t;}
+        }
+        fireNotification(item.title,body);
+      }
+    });
+  },30000);
+}
+
+function renderNotifButton(){
+  const el=document.getElementById('notif-btn');
+  if(!el)return;
+  if(!('Notification' in window)){el.style.display='none';return;}
+  if(Notification.permission==='granted'){
+    el.innerHTML='<span style="font-family:var(--fm);font-size:10px;color:var(--grn)">🔔 On</span>';
+  } else if(Notification.permission==='denied'){
+    el.innerHTML='<span style="font-family:var(--fm);font-size:10px;color:var(--red)" title="Enable in browser settings">🔕 Blocked</span>';
+  } else {
+    el.innerHTML='<span onclick="enableNotifs()" style="font-family:var(--fm);font-size:10px;color:var(--txt2);cursor:pointer;background:var(--s3);border:1px solid var(--bdr2);padding:4px 10px;border-radius:99px">🔔 Enable alerts</span>';
+  }
+}
+
+async function enableNotifs(){
+  const ok=await requestNotifPermission();
+  if(ok){
+    scheduleNotifications();
+    fireNotification('✅ Notifications enabled','1-min reminders before each block and daily event.');
+  }
+  renderNotifButton();
+}
+
 // ── INIT ──
 loadAll();
 renderCFA();
@@ -1718,15 +1809,17 @@ updateChips();
 checkStorage();
 setInterval(updateChips,60000);
 // Auth + cloud sync on startup
-initAuth().then(() => {
-  cloudLoad().then(() => {
+initAuth().then(()=>{
+  cloudLoad().then(()=>{
     renderCFA();
-    // If returning from Google OAuth, also render targets to unlock UI
-    if (isOwner) renderAuthBadge();
+    if(isOwner)renderAuthBadge();
   });
 });
 // Auto-refresh targets every minute to update current block highlighting
 setInterval(()=>{if(document.getElementById('panel-targets').classList.contains('active'))renderTargets();},60000);
+// Notifications — auto-schedule if already permitted, else show button
+if(typeof Notification!=='undefined'&&Notification.permission==='granted'){scheduleNotifications();}
+renderNotifButton();
 </script>
 </body>
 </html>
