@@ -937,6 +937,66 @@ function getAutoStudyMins(dateStr){
   return mins;
 }
 
+// ── FROZEN DAILY SCHEDULE ──
+// Today's blocks are built ONCE and stored in dayData.
+// Ticking videos marks them done within the fixed schedule.
+// This prevents block reshuffling when videos are ticked.
+
+function getTodaySchedule(){
+  const dateStr=today();
+  if(!dayData[dateStr])dayData[dateStr]={};
+  // Return stored schedule if exists
+  if(dayData[dateStr].schedule && dayData[dateStr].schedule.length>0){
+    return dayData[dateStr].schedule;
+  }
+  // Build fresh schedule and freeze it
+  const blocks=buildBlocks(dateStr);
+  // Store only the keys (video keys) per block, not full video objects
+  // (video objects are reconstructed from SYL on render)
+  dayData[dateStr].schedule=blocks.map(blk=>({
+    num:blk.num,
+    blockLabel:blk.blockLabel,
+    studyRange:blk.studyRange,
+    treadRange:blk.treadRange,
+    isNight:blk.isNight,
+    session:blk.session,
+    blockH:blk.blockH,
+    overlong:blk.overlong,
+    vidKeys:blk.vids.map(v=>v.key)
+  }));
+  save();
+  return blocks;
+}
+
+function getScheduleBlocks(dateStr){
+  // Returns full block objects from frozen schedule
+  // Reconstructs video objects from stored keys
+  const stored=dayData[dateStr]?.schedule;
+  if(!stored||!stored.length) return getTodaySchedule();
+
+  // Build a key→video lookup from all pending + done videos
+  const vidMap={};
+  SYL.forEach(t=>t.modules.forEach((m,mi)=>m.subtopics.forEach((s,si)=>{
+    const key=`${t.id}-${mi}-${si}`;
+    vidMap[key]={key,s,mi,si,modTitle:m.title,topicTitle:t.title,topicId:t.id};
+  })));
+
+  const saved=dayData[dateStr]||{};
+  return stored.map(blk=>({
+    ...blk,
+    vids:blk.vidKeys.map(k=>vidMap[k]).filter(Boolean),
+    treadDone:!!(saved.treads&&saved.treads[blk.num-1])
+  }));
+}
+
+function resetTodaySchedule(){
+  // Call this if you want to rebuild today's schedule (e.g. after bulk mark)
+  const dateStr=today();
+  if(dayData[dateStr])delete dayData[dateStr].schedule;
+  save();
+  renderTargets();
+}
+
 function getBlockTime(b){
   // Day starts at midnight: night session FIRST, then day session
   // Blocks 0-3:  night session 12AM–4AM  (12:00, 1:00, 2:00, 3:00)
@@ -1259,7 +1319,8 @@ function toggleVid(key){
 function renderTargets(){
   const todayStr=today();
   const pending=getPending();
-  const blocks=buildBlocks(todayStr);
+  // Use FROZEN schedule — doesn't reshuffle when videos are ticked
+  const blocks=getScheduleBlocks(todayStr);
   const dtl=daysTo(DEADLINE);
   const sched=getScheduleStatus();
   const streak=getStreak();
@@ -1287,15 +1348,15 @@ function renderTargets(){
   // ── TOP STATS BAR ──
   let h=`<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:12px">
     <div style="background:var(--s2);border:1px solid var(--bdr);border-top:2px solid var(--grn);border-radius:var(--rs);padding:10px 12px">
-      <div style="font-family:var(--fm);font-size:18px;font-weight:700;color:var(--grn);line-height:1">${pct}%</div>
+      <div data-stat="pct" style="font-family:var(--fm);font-size:18px;font-weight:700;color:var(--grn);line-height:1">${pct}%</div>
       <div style="font-family:var(--fm);font-size:8px;color:var(--txt3);text-transform:uppercase;letter-spacing:.08em;margin-top:3px">Today done</div>
     </div>
     <div style="background:var(--s2);border:1px solid var(--bdr);border-top:2px solid var(--gold);border-radius:var(--rs);padding:10px 12px">
-      <div style="font-family:var(--fm);font-size:18px;font-weight:700;color:var(--gold2);line-height:1">${fmt(autoMins)}</div>
+      <div data-stat="studied" style="font-family:var(--fm);font-size:18px;font-weight:700;color:var(--gold2);line-height:1">${fmt(autoMins)}</div>
       <div style="font-family:var(--fm);font-size:8px;color:var(--txt3);text-transform:uppercase;letter-spacing:.08em;margin-top:3px">Studied</div>
     </div>
     <div style="background:var(--s2);border:1px solid var(--bdr);border-top:2px solid var(--blu);border-radius:var(--rs);padding:10px 12px">
-      <div style="font-family:var(--fm);font-size:18px;font-weight:700;color:var(--blu);line-height:1">${doneVids}/${totalVids}</div>
+      <div data-stat="videos" style="font-family:var(--fm);font-size:18px;font-weight:700;color:var(--blu);line-height:1">${doneVids}/${totalVids}</div>
       <div style="font-family:var(--fm);font-size:8px;color:var(--txt3);text-transform:uppercase;letter-spacing:.08em;margin-top:3px">Videos</div>
     </div>
     <div style="background:var(--s2);border:1px solid var(--bdr);border-top:2px solid ${sched.ahead?'var(--grn)':'var(--red)'};border-radius:var(--rs);padding:10px 12px">
@@ -1312,11 +1373,13 @@ function renderTargets(){
   h+=`<div style="background:var(--s2);border:1px solid var(--bdr);border-radius:var(--rs);padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px">
     <div style="flex:1">
       <div style="font-family:var(--fm);font-size:12px;font-weight:500;color:var(--txt)">${dateStr}</div>
-      <div style="font-family:var(--fm);font-size:9px;color:var(--txt3);margin-top:3px">${dtl}d to Jul 15 · ${daysTo(EXAM)}d to exam · ${pending.length} videos remaining</div>
+      <div style="font-family:var(--fm);font-size:9px;color:var(--txt3);margin-top:3px">${dtl}d to Jul 15 · ${daysTo(EXAM)}d to exam · ${pending.length} videos remaining
+      <span onclick="resetTodaySchedule()" style="color:var(--txt3);cursor:pointer;text-decoration:underline;margin-left:8px;font-size:8px">↺ rebuild today</span>
+    </div>
     </div>
     <div style="width:200px;flex-shrink:0">
       <div style="display:flex;justify-content:space-between;font-family:var(--fm);font-size:9px;color:var(--txt3);margin-bottom:4px"><span>Progress today</span><span>${pct}%</span></div>
-      <div style="height:4px;background:var(--s5);border-radius:99px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${pct>=80?'var(--grn)':'var(--gold)'};border-radius:99px;transition:width .4s"></div></div>
+      <div style="height:4px;background:var(--s5);border-radius:99px;overflow:hidden"><div id="targets-progress-bar" style="height:100%;width:${pct}%;background:${pct>=80?'var(--grn)':'var(--gold)'};border-radius:99px;transition:width .4s"></div></div>
     </div>
     <div style="font-family:var(--fm);font-size:9px;color:var(--txt3);flex-shrink:0"><span class="kbd">Space</span> tick · <span class="kbd">N</span> next · <span class="kbd">T</span> tread</div>
   </div>`;
@@ -1507,7 +1570,7 @@ function renderBlock(blk,bi,currentBlkIdx){
       </div>
       <div style="flex:1;min-width:0;padding:0 10px">
         <div style="font-size:11px;color:${allDone?'var(--txt3)':'var(--txt)'};font-family:var(--fm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${blk.vids[0]?blk.vids[0].modTitle:''}</div>
-        <div style="font-family:var(--fm);font-size:8px;color:var(--txt3);margin-top:1px">${fmt(blkMins)} · ${doneCnt}/${blk.vids.length}</div>
+        <div id="blk-badge-${bi}" style="font-family:var(--fm);font-size:8px;color:var(--txt3);margin-top:1px">${fmt(blkMins)} · ${doneCnt}/${blk.vids.length}</div>
       </div>
       ${isCurrent?`<span style="font-family:var(--fm);font-size:8px;color:${sessionCol};background:${blk.session==='night'?'var(--pra)':'var(--ga)'};border:1px solid ${blk.session==='night'?'rgba(167,139,250,0.2)':'rgba(232,160,32,0.2)'};padding:2px 7px;border-radius:2px;flex-shrink:0">NOW</span>`:''}
       <div class="big-chk ${allDone?'done':''}" onclick="event.stopPropagation();markBlk(${bi},${!allDone})" style="flex-shrink:0"><span class="bct">✓</span></div>
@@ -1549,19 +1612,53 @@ function toggleVidT(key){
   if(!isOwner){showLoginModal();return;}
   prog[key]=!prog[key];if(!prog[key])delete prog[key];
   save();
+  // Lightweight DOM update — toggle done class on all matching elements
   document.querySelectorAll(`[data-key="${key}"]`).forEach(el=>el.classList.toggle('done',!!prog[key]));
-  refreshAfterTick();
-  // Update studied-hours chip specifically (first pchip in day-summary)
-  const autoMins=getAutoStudyMins(today());
-  const summaryChips=document.querySelectorAll('.day-summary .pchip-num');
-  if(summaryChips[0])summaryChips[0].textContent=fmt(autoMins);
+  // Update top stat chips without full re-render
+  updateTargetStats();
+  // Update CFA panel badges if visible
+  if(document.getElementById('panel-cfa').classList.contains('active')) refreshAfterTick();
+}
+
+function updateTargetStats(){
+  const todayStr=today();
+  const blocks=getScheduleBlocks(todayStr);
+  let totalVids=0,doneVids=0,totalMins=0,doneMins=0;
+  blocks.forEach(b=>{b.vids.forEach(v=>{totalVids++;totalMins+=v.s.m;if(prog[v.key]){doneVids++;doneMins+=v.s.m;}});});
+  const pct=totalVids?Math.round(doneVids/totalVids*100):100;
+  const autoMins=getAutoStudyMins(todayStr);
+  // Update stat chips
+  const chips=document.querySelectorAll('#panel-targets [data-stat]');
+  chips.forEach(c=>{
+    const k=c.dataset.stat;
+    if(k==='pct')c.textContent=pct+'%';
+    else if(k==='studied')c.textContent=fmt(autoMins);
+    else if(k==='videos')c.textContent=doneVids+'/'+totalVids;
+  });
+  // Update progress bar
+  const pb=document.getElementById('targets-progress-bar');
+  if(pb)pb.style.width=pct+'%';
+  // Update block badges
+  blocks.forEach((blk,bi)=>{
+    const badge=document.getElementById('blk-badge-'+bi);
+    if(badge){
+      const done=blk.vids.filter(v=>prog[v.key]).length;
+      badge.textContent=done+'/'+blk.vids.length;
+    }
+  });
 }
 function markBlk(bi,val){
   if(!isOwner){showLoginModal();return;}
-  const blocks=buildBlocks(today());
+  const blocks=getScheduleBlocks(today());
   if(!blocks[bi])return;
   blocks[bi].vids.forEach(v=>{if(val)prog[v.key]=true;else delete prog[v.key];});
-  save();renderTargets();refreshAfterTick();
+  save();
+  // Update DOM without full re-render
+  blocks[bi].vids.forEach(v=>{
+    document.querySelectorAll(`[data-key="${v.key}"]`).forEach(el=>el.classList.toggle('done',!!prog[v.key]));
+  });
+  updateTargetStats();
+  refreshAfterTick();
 }
 function toggleTread(bi){
   if(!isOwner){showLoginModal();return;}
