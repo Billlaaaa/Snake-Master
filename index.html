@@ -1266,300 +1266,278 @@ function renderTargets(){
   const dl=dayData[todayStr]||{};
   const nowH=new Date().getHours();
   const currentBlkIdx=getCurrentBlockIdx(blocks);
-  const isAfterStudy=nowH>=STUDY_END_H;
+  const isAfterStudy=nowH>=19&&nowH<22;
 
-  // init block open state
-  blocks.forEach((b,i)=>{if(ui.blkOpen[i]===undefined)ui.blkOpen[i]=(i===currentBlkIdx||currentBlkIdx===-1&&i===0);});
+  // Init block open state — current block open, rest closed
+  blocks.forEach((b,i)=>{
+    if(ui.blkOpen[i]===undefined) ui.blkOpen[i]=(i===currentBlkIdx||(currentBlkIdx===-1&&i===0));
+  });
 
   let totalVids=0,doneVids=0,totalMins=0,doneMins=0;
   blocks.forEach(b=>{b.vids.forEach(v=>{totalVids++;totalMins+=v.s.m;if(prog[v.key]){doneVids++;doneMins+=v.s.m;}});});
   const pct=totalVids?Math.round(doneVids/totalVids*100):100;
   const autoMins=getAutoStudyMins(todayStr);
-  const dateStr=new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const dateStr=new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});
   const routineDone=LIFESTYLE.filter(l=>(dl.routine||{})[l.id]).length;
 
-  let h='';
-  if(dtl<=3&&dtl>0)h+=`<div style="background:var(--rda);border:1px solid rgba(248,113,113,0.2);border-radius:var(--r);padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--red);display:flex;align-items:center;gap:8px">⚠️ ${dtl} days to July 15. No slack left — push hard.</div>`;
-  if(dtl<=0)h+=`<div style="background:var(--rda);border:1px solid rgba(248,113,113,0.2);border-radius:var(--r);padding:10px 14px;margin-bottom:12px;font-size:12px;color:var(--red)">⚠️ July 15 passed. Switch to mocks + revision.</div>`;
+  if(dtl<=3&&dtl>0){
+    document.getElementById('panel-targets').innerHTML=`<div style="background:var(--rda);border:1px solid rgba(255,77,77,0.2);border-radius:var(--rs);padding:10px 14px;margin-bottom:10px;font-family:var(--fm);font-size:11px;color:var(--red)">⚠ ${dtl} days to July 15. No slack left.</div>`;
+  }
 
-  // Day summary header
-  h+=`<div class="day-summary">
-    <div class="ring-wrap" style="width:64px;height:64px">
-      <svg width="64" height="64" viewBox="0 0 64 64">
-        <circle cx="32" cy="32" r="26" fill="none" stroke="#1a1a1f" stroke-width="6"/>
-        <circle cx="32" cy="32" r="26" fill="none" stroke="#4ade80" stroke-width="6" stroke-linecap="round"
-          stroke-dasharray="163" stroke-dashoffset="${Math.round(163-163*pct/100)}" style="transition:stroke-dashoffset .5s"/>
-      </svg>
-      <div class="ring-ctr"><span class="ring-num" style="font-size:13px;color:var(--grn)">${pct}%</span></div>
+  // ── TOP STATS BAR ──
+  let h=`<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:12px">
+    <div style="background:var(--s2);border:1px solid var(--bdr);border-top:2px solid var(--grn);border-radius:var(--rs);padding:10px 12px">
+      <div style="font-family:var(--fm);font-size:18px;font-weight:700;color:var(--grn);line-height:1">${pct}%</div>
+      <div style="font-family:var(--fm);font-size:8px;color:var(--txt3);text-transform:uppercase;letter-spacing:.08em;margin-top:3px">Today done</div>
     </div>
-    <div class="ds-info">
-      <div class="ds-title">Daily Execution — ${dateStr}</div>
-      <div class="ds-sub">${doneVids}/${totalVids} videos · ${fmt(doneMins)} studied · ${routineDone}/${LIFESTYLE.length} routine blocks done</div>
-      <div class="ds-date">${dtl}d to Jul 15 · ${pending.length} videos remaining · ${streak} day streak 🔥 · ${sched.ahead?'▲':'▼'} ${sched.days.toFixed(1)}d ${sched.ahead?'ahead':'behind'}</div>
+    <div style="background:var(--s2);border:1px solid var(--bdr);border-top:2px solid var(--gold);border-radius:var(--rs);padding:10px 12px">
+      <div style="font-family:var(--fm);font-size:18px;font-weight:700;color:var(--gold2);line-height:1">${fmt(autoMins)}</div>
+      <div style="font-family:var(--fm);font-size:8px;color:var(--txt3);text-transform:uppercase;letter-spacing:.08em;margin-top:3px">Studied</div>
     </div>
-    <div class="pchip" style="background:var(--ga);border:1px solid rgba(201,168,76,0.2);min-width:68px;text-align:center">
-      <div class="pchip-num" style="color:var(--gold2)">${fmt(autoMins)}</div>
-      <div class="pchip-label" style="color:var(--gold)">Studied</div>
+    <div style="background:var(--s2);border:1px solid var(--bdr);border-top:2px solid var(--blu);border-radius:var(--rs);padding:10px 12px">
+      <div style="font-family:var(--fm);font-size:18px;font-weight:700;color:var(--blu);line-height:1">${doneVids}/${totalVids}</div>
+      <div style="font-family:var(--fm);font-size:8px;color:var(--txt3);text-transform:uppercase;letter-spacing:.08em;margin-top:3px">Videos</div>
     </div>
-    <div class="pchip" style="background:${sched.ahead?'var(--gna)':'var(--rda)'};border:1px solid ${sched.ahead?'rgba(74,222,128,0.2)':'rgba(248,113,113,0.2)'};min-width:68px;text-align:center">
-      <div class="pchip-num" style="color:${sched.ahead?'var(--grn)':'var(--red)'}">${sched.days.toFixed(1)}d</div>
-      <div class="pchip-label" style="color:${sched.ahead?'rgba(74,222,128,0.7)':'rgba(248,113,113,0.7)'}">${sched.ahead?'Ahead':'Behind'}</div>
+    <div style="background:var(--s2);border:1px solid var(--bdr);border-top:2px solid ${sched.ahead?'var(--grn)':'var(--red)'};border-radius:var(--rs);padding:10px 12px">
+      <div style="font-family:var(--fm);font-size:18px;font-weight:700;color:${sched.ahead?'var(--grn)':'var(--red)'};line-height:1">${sched.days.toFixed(1)}d</div>
+      <div style="font-family:var(--fm);font-size:8px;color:var(--txt3);text-transform:uppercase;letter-spacing:.08em;margin-top:3px">${sched.ahead?'Ahead':'Behind'}</div>
+    </div>
+    <div style="background:var(--s2);border:1px solid var(--bdr);border-top:2px solid var(--prp);border-radius:var(--rs);padding:10px 12px">
+      <div style="font-family:var(--fm);font-size:18px;font-weight:700;color:var(--prp);line-height:1">${streak}🔥</div>
+      <div style="font-family:var(--fm);font-size:8px;color:var(--txt3);text-transform:uppercase;letter-spacing:.08em;margin-top:3px">Streak</div>
     </div>
   </div>`;
 
-  h+=`<div class="kbd-hint">Keyboard: <span class="kbd">Space</span> tick video · <span class="kbd">N</span> next block · <span class="kbd">T</span> tick treadmill · Night session 12AM–4AM · Day session 12PM–7PM</div>`;
+  // ── DATE + PROGRESS BAR ──
+  h+=`<div style="background:var(--s2);border:1px solid var(--bdr);border-radius:var(--rs);padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px">
+    <div style="flex:1">
+      <div style="font-family:var(--fm);font-size:12px;font-weight:500;color:var(--txt)">${dateStr}</div>
+      <div style="font-family:var(--fm);font-size:9px;color:var(--txt3);margin-top:3px">${dtl}d to Jul 15 · ${daysTo(EXAM)}d to exam · ${pending.length} videos remaining</div>
+    </div>
+    <div style="width:200px;flex-shrink:0">
+      <div style="display:flex;justify-content:space-between;font-family:var(--fm);font-size:9px;color:var(--txt3);margin-bottom:4px"><span>Progress today</span><span>${pct}%</span></div>
+      <div style="height:4px;background:var(--s5);border-radius:99px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${pct>=80?'var(--grn)':'var(--gold)'};border-radius:99px;transition:width .4s"></div></div>
+    </div>
+    <div style="font-family:var(--fm);font-size:9px;color:var(--txt3);flex-shrink:0"><span class="kbd">Space</span> tick · <span class="kbd">N</span> next · <span class="kbd">T</span> tread</div>
+  </div>`;
 
-  // ── MORNING LIFESTYLE BLOCKS (before 8 AM) ──
-  h+=`<div class="sh">Morning — Wake Up & Setup</div>`;
-  LIFESTYLE.slice(0,3).forEach(item=>{ // Wake, Breakfast, Setup
-    const done=!!((dl.routine||{})[item.id]);
-    const isPast=nowH>=8;
-    h+=`<div class="tl-item">
-      <div class="tl-gutter"><div class="tl-time">${item.time}</div><div class="tl-line"></div></div>
-      <div class="tl-card" style="margin-bottom:5px">
-        <div class="lc ${done?'lc-done':''}${isPast&&!done?' lc-past':''}" onclick="toggleLifestyle('${item.id}','${todayStr}')">
-          <div class="lc-icon">${item.icon}</div>
-          <div class="lc-info"><div class="lc-label">${item.label}</div><div class="lc-sub">${item.sub}</div></div>
-          <div class="lc-toggle"><span class="lc-tick">✓</span></div>
-        </div>
-      </div>
-    </div>`;
-  });
+  // ── TWO COLUMN LAYOUT ──
+  h+=`<div style="display:grid;grid-template-columns:3fr 2fr;gap:10px;align-items:start">`;
 
-  // ── STUDY BLOCKS ──
-  h+=`<div class="sh">☀️ Day Session — 12:00 PM to 7:00 PM · Blocks 5–11</div>`;
+  // ════════════════════════════
+  // LEFT PANEL — STUDY BLOCKS
+  // ════════════════════════════
+  h+=`<div style="display:flex;flex-direction:column;gap:6px">`;
+
   if(!pending.length){
-    h+=`<div style="text-align:center;padding:40px 20px;color:var(--grn)"><div style="font-size:36px;margin-bottom:12px">🎯</div><div style="font-family:var(--fd);font-size:16px;font-weight:700">All Videos Complete!</div></div>`;
-  } else {
-    let prevSubject='';
-    const dayBlocks=blocks.filter(b=>b.session==='day');
-    dayBlocks.forEach((blk)=>{
-      const bi=blocks.indexOf(blk);
-      const allDone=blk.vids.every(v=>prog[v.key]);
-      const doneCnt=blk.vids.filter(v=>prog[v.key]).length;
-      const isOpen=!!ui.blkOpen[bi];
-      const isCurrent=bi===currentBlkIdx;
-      // isPast: block time has already passed today
-    const blkEndH=blk.isNight?(blk.blockH+1):(blk.blockH+1);
-    const isPast=blk.isNight?(nowH>blkEndH&&nowH<12):(nowH>=blkEndH&&nowH<20);
-      const blkMins=blk.vids.reduce((a,v)=>a+v.s.m,0);
-      const thisSubject=blk.vids[0]?blk.vids[0].topicTitle:'';
-
-      // Subject transition divider
-      if(thisSubject&&thisSubject!==prevSubject&&prevSubject!==''){
-        h+=`<div class="subj-transition"><div class="st-line"></div><div class="st-label">Starting: ${thisSubject}</div><div class="st-line"></div></div>`;
-      }
-      prevSubject=thisSubject;
-
-      h+=`<div class="tl-item">
-        <div class="tl-gutter"><div class="tl-time">${ampm(STUDY_START_H+bi,0)}</div><div class="tl-line"></div></div>
-        <div class="tl-card" style="margin-bottom:5px">
-          <div class="blk-card ${isCurrent?'blk-current':''}${isPast&&!allDone?' blk-past':''}${allDone?' blk-done':''}" id="blkcard-${bi}">
-            <div class="blk-hd" onclick="toggleBlk(${bi})">
-              <div class="blk-num-badge" style="${allDone?'color:var(--grn)':isCurrent?'color:var(--gold)':isPast?'color:var(--red)':'color:var(--txt3)'}">${blk.num}</div>
-              <div class="blk-times">
-                <div class="blk-main-time">${blk.blockLabel}</div>
-                <div class="blk-sub-times">${blk.studyRange} study · ${blk.treadRange} treadmill</div>
-              </div>
-              <div class="blk-info">
-                <div class="blk-title">${blk.vids[0]?blk.vids[0].modTitle:'Block '+blk.num}</div>
-                <div class="blk-meta">${blk.vids[0]?blk.vids[0].topicTitle:''} · ${fmt(blkMins)} · ${doneCnt}/${blk.vids.length} done</div>
-              </div>
-              <div class="big-chk ${allDone?'done':''}" onclick="event.stopPropagation();markBlk(${bi},${!allDone})"><span class="bct">✓</span></div>
-            </div>
-            <div class="blk-body ${isOpen?'open':''}" id="blk-${bi}">
-              <div class="blk-study-section">
-                <div class="blk-section-label">📖 Study — ${blk.studyRange}</div>
-                <div class="bvideo-list">`;
-      blk.vids.forEach((v,vi2)=>{
-        const d=!!prog[v.key];
-        const isFocus=isCurrent&&vi2===0&&!d;
-        h+=`<div class="bvi${d?' done':''}${isFocus?' bvi-focus':''}" data-key="${v.key}" id="vid-${bi}-${vi2}" onclick="toggleVidT('${v.key}')">
-          <div class="chk" style="width:12px;height:12px"><span class="chk-tick">✓</span></div>
-          <span class="bvi-num">${v.s.vidLabel}</span>
-          <span style="font-family:var(--fm);font-size:9px;color:var(--gold);background:rgba(232,160,32,0.08);border:1px solid rgba(232,160,32,0.15);padding:1px 5px;border-radius:2px;white-space:nowrap;flex-shrink:0;margin-right:2px">${v.s.m}m</span>
-          <div class="bvi-body">
-            <div class="bvi-title">${v.s.t}</div>
-            <div class="bvi-ctx">${v.topicTitle} · ${v.modTitle}</div>
-          </div>
-          <span class="bvi-time">${v.s.m}m</span>
-        </div>`;
-      });
-      h+=`</div></div>
-              <div class="tread-row" id="tread-${bi}">
-                <div style="font-size:16px">🏃</div>
-                <div class="tr-info"><div class="tr-title">Treadmill — ${blk.treadRange}</div><div class="tr-sub">10 min · 4 km/hr · active recovery</div></div>
-                <div class="big-chk ${blk.treadDone?'done':''}" style="border-color:rgba(74,222,128,0.3)" onclick="toggleTread(${bi})"><span class="bct">✓</span></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>`;
-    });
-  }
-
-  // ── EVENING LIFESTYLE BLOCKS (after 7 PM) ──
-  h+=`<div class="sh">Evening — Gym & Wind Down</div>`;
-  LIFESTYLE.slice(3,10).forEach(item=>{ // Relax, Pre-workout, Gym, Post-workout, Dinner, Aeon, Supps
-    const done=!!((dl.routine||{})[item.id]);
-    const timeH=parseInt(item.time);
-    const isPast=nowH>timeH+12||(nowH>=19&&item.id==='relax'&&nowH>19);
-    h+=`<div class="tl-item">
-      <div class="tl-gutter"><div class="tl-time">${item.time}</div><div class="tl-line"></div></div>
-      <div class="tl-card" style="margin-bottom:5px">
-        <div class="lc ${done?'lc-done':''}" onclick="toggleLifestyle('${item.id}','${todayStr}')">
-          <div class="lc-icon">${item.icon}</div>
-          <div class="lc-info"><div class="lc-label">${item.label}</div><div class="lc-sub">${item.sub}</div></div>
-          <div class="lc-toggle"><span class="lc-tick">✓</span></div>
-        </div>
-      </div>
+    h+=`<div style="background:var(--s2);border:1px solid rgba(0,217,126,0.2);border-radius:var(--r);padding:40px;text-align:center">
+      <div style="font-size:36px;margin-bottom:12px">🎯</div>
+      <div style="font-family:var(--fm);font-size:14px;font-weight:700;color:var(--grn)">All Videos Complete!</div>
+      <div style="font-size:11px;color:var(--txt2);margin-top:6px">Begin mock exams and revision.</div>
     </div>`;
-  });
-
-  // ── DAILY JOURNAL SECTION ──
-  // ── NIGHT STUDY SESSION ──
-  h+=`<div class="sh">🌙 Night Session — 12:00 AM – 4:00 AM · Blocks 1–4</div>`;
-  if(!pending.length){
-    h+=`<div style="text-align:center;padding:20px;color:var(--grn);font-family:var(--fm);font-size:12px">✓ All videos complete</div>`;
   } else {
+    // Night session blocks
     const nightBlocks=blocks.filter(b=>b.session==='night');
-    if(!nightBlocks.length){
-      h+=`<div style="background:var(--s2);border:1px solid var(--bdr);border-radius:var(--rs);padding:10px 14px;font-family:var(--fm);font-size:10px;color:var(--txt3)">Night blocks will appear here after all day blocks are assigned.</div>`;
-    } else {
-      nightBlocks.forEach((blk,nbi)=>{
-        const bi=blocks.indexOf(blk);
-        const allDone=blk.vids.every(v=>prog[v.key]);
-        const doneCnt=blk.vids.filter(v=>prog[v.key]).length;
-        const isOpen=!!ui.blkOpen[bi];
-        const blkMins=blk.vids.reduce((a,v)=>a+v.s.m,0);
-        h+=`<div class="tl-item">
-          <div class="tl-gutter"><div class="tl-time">${ampm(blk.blockH,0)}</div><div class="tl-line"></div></div>
-          <div class="tl-card" style="margin-bottom:5px">
-            <div class="blk-card ${allDone?'blk-done':''}" style="border-left:2px solid rgba(167,139,250,0.4)" id="blkcard-${bi}">
-              <div class="blk-hd" onclick="toggleBlk(${bi})">
-                <div class="blk-num-badge" style="color:${allDone?'var(--grn)':'var(--prp)'}">${blk.num}</div>
-                <div class="blk-times">
-                  <div class="blk-main-time">${blk.blockLabel}</div>
-                  <div class="blk-sub-times">${blk.studyRange} study · ${blk.treadRange} treadmill</div>
-                </div>
-                <div class="blk-info">
-                  <div class="blk-title">${blk.vids[0]?blk.vids[0].modTitle:'Night Block '+blk.num}</div>
-                  <div class="blk-meta">${blk.vids[0]?blk.vids[0].topicTitle:''} · ${fmt(blkMins)} · ${doneCnt}/${blk.vids.length}</div>
-                </div>
-                <div class="big-chk ${allDone?'done':''}" onclick="event.stopPropagation();markBlk(${bi},${!allDone})"><span class="bct">✓</span></div>
-              </div>
-              <div class="blk-body ${isOpen?'open':''}" id="blk-${bi}">
-                <div class="blk-study-section">
-                  <div class="blk-section-label">📖 Study — ${blk.studyRange}</div>
-                  <div class="bvideo-list">`;
-        blk.vids.forEach((v,vi2)=>{
-          const d=!!prog[v.key];
-          h+=`<div class="bvi${d?' done':''}" data-key="${v.key}" id="vid-${bi}-${vi2}" onclick="toggleVidT('${v.key}')">
-            <div class="chk" style="width:12px;height:12px"><span class="chk-tick">✓</span></div>
-            <span class="bvi-num">${v.s.vidLabel}</span>
-            <span style="font-family:var(--fm);font-size:9px;color:var(--gold);background:rgba(232,160,32,0.08);border:1px solid rgba(232,160,32,0.15);padding:1px 5px;border-radius:2px;white-space:nowrap;flex-shrink:0;margin-right:2px">${v.s.m}m</span>
-            <div class="bvi-body">
-              <div class="bvi-title">${v.s.t}</div>
-              <div class="bvi-ctx">${v.topicTitle} · ${v.modTitle}</div>
-            </div>
-          </div>`;
-        });
-        h+=`</div></div>
-                <div class="tread-row" id="tread-${bi}">
-                  <div style="font-size:16px">🏃</div>
-                  <div class="tr-info"><div class="tr-title">Treadmill — ${blk.treadRange}</div><div class="tr-sub">10 min · 4 km/hr · active recovery</div></div>
-                  <div class="big-chk ${blk.treadDone?'done':''}" style="border-color:rgba(74,222,128,0.3)" onclick="toggleTread(${bi})"><span class="bct">✓</span></div>
-                </div>
-              </div>
-            </div>
-          </div>
+    const dayBlocks2=blocks.filter(b=>b.session==='day');
+
+    if(nightBlocks.length){
+      h+=`<div style="background:rgba(167,139,250,0.04);border:1px solid rgba(167,139,250,0.2);border-radius:var(--r);overflow:hidden">
+        <div style="padding:8px 14px;border-bottom:1px solid rgba(167,139,250,0.15);display:flex;align-items:center;gap:8px">
+          <span style="font-family:var(--fm);font-size:9px;color:var(--prp);text-transform:uppercase;letter-spacing:.12em;font-weight:500">🌙 Night Session</span>
+          <span style="font-family:var(--fm);font-size:9px;color:var(--txt3)">12:00 AM – 4:00 AM · Blocks 1–4</span>
+          <span style="font-family:var(--fm);font-size:9px;color:var(--txt3);margin-left:auto">${nightBlocks.filter(b=>b.vids.every(v=>prog[v.key])).length}/${nightBlocks.length} done</span>
         </div>`;
+      nightBlocks.forEach((blk)=>{
+        const bi=blocks.indexOf(blk);
+        h+=renderBlock(blk,bi,currentBlkIdx);
       });
+      h+=`</div>`;
+    }
+
+    if(dayBlocks2.length){
+      h+=`<div style="background:rgba(232,160,32,0.03);border:1px solid rgba(232,160,32,0.15);border-radius:var(--r);overflow:hidden">
+        <div style="padding:8px 14px;border-bottom:1px solid rgba(232,160,32,0.12);display:flex;align-items:center;gap:8px">
+          <span style="font-family:var(--fm);font-size:9px;color:var(--gold2);text-transform:uppercase;letter-spacing:.12em;font-weight:500">☀️ Day Session</span>
+          <span style="font-family:var(--fm);font-size:9px;color:var(--txt3)">12:00 PM – 7:00 PM · Blocks 5–11</span>
+          <span style="font-family:var(--fm);font-size:9px;color:var(--txt3);margin-left:auto">${dayBlocks2.filter(b=>b.vids.every(v=>prog[v.key])).length}/${dayBlocks2.length} done</span>
+        </div>`;
+      dayBlocks2.forEach((blk)=>{
+        const bi=blocks.indexOf(blk);
+        h+=renderBlock(blk,bi,currentBlkIdx);
+      });
+      h+=`</div>`;
     }
   }
-  // Post-night lifestyle (diary, weight, sleep)
-  h+=`<div class="sh">After Night Session</div>`;
-  LIFESTYLE.slice(10).forEach(item=>{
-    const done=!!((dl.routine||{})[item.id]);
-    h+=`<div class="tl-item">
-      <div class="tl-gutter"><div class="tl-time">${item.time}</div><div class="tl-line"></div></div>
-      <div class="tl-card" style="margin-bottom:5px">
-        <div class="lc ${done?'lc-done':''}" onclick="toggleLifestyle('${item.id}','${todayStr}')">
-          <div class="lc-icon">${item.icon}</div>
-          <div class="lc-info"><div class="lc-label">${item.label}</div><div class="lc-sub">${item.sub}</div></div>
-          <div class="lc-toggle"><span class="lc-tick">✓</span></div>
+
+  // EOD summary
+  if(isAfterStudy){
+    h+=`<div style="background:linear-gradient(135deg,rgba(232,160,32,0.07),rgba(232,160,32,0.02));border:1px solid rgba(232,160,32,0.2);border-top:2px solid var(--gold);border-radius:var(--r);padding:14px">
+      <div style="font-family:var(--fm);font-size:10px;font-weight:500;color:var(--gold2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">📊 End of Day</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">
+        <div style="background:rgba(0,0,0,0.3);border:1px solid var(--bdr);border-radius:4px;padding:8px;text-align:center">
+          <div style="font-family:var(--fm);font-size:16px;font-weight:700;color:var(--txt)">${fmt(autoMins)}</div>
+          <div style="font-family:var(--fm);font-size:8px;color:var(--txt3);margin-top:2px;text-transform:uppercase">Studied</div>
         </div>
+        <div style="background:rgba(0,0,0,0.3);border:1px solid var(--bdr);border-radius:4px;padding:8px;text-align:center">
+          <div style="font-family:var(--fm);font-size:16px;font-weight:700;color:var(--txt)">${doneVids}/${totalVids}</div>
+          <div style="font-family:var(--fm);font-size:8px;color:var(--txt3);margin-top:2px;text-transform:uppercase">Videos</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.3);border:1px solid var(--bdr);border-radius:4px;padding:8px;text-align:center">
+          <div style="font-family:var(--fm);font-size:16px;font-weight:700;color:var(--txt)">${routineDone}/${LIFESTYLE.length}</div>
+          <div style="font-family:var(--fm);font-size:8px;color:var(--txt3);margin-top:2px;text-transform:uppercase">Routine</div>
+        </div>
+        <div style="background:rgba(0,0,0,0.3);border:1px solid var(--bdr);border-radius:4px;padding:8px;text-align:center">
+          <div style="font-family:var(--fm);font-size:16px;font-weight:700;color:var(--txt)">${dl.weight||'—'}</div>
+          <div style="font-family:var(--fm);font-size:8px;color:var(--txt3);margin-top:2px;text-transform:uppercase">Weight</div>
+        </div>
+      </div>
+      <div style="font-family:var(--fm);font-size:10px;color:var(--txt3)">${pct>=80?'✓ Strong day.':pct>=50?'⚡ Decent — push harder tomorrow.':'⚠ Below target — catch up tomorrow.'} ${sched.ahead?'▲ '+sched.days.toFixed(1)+'d ahead.':'▼ '+sched.days.toFixed(1)+'d behind — front-load tomorrow.'}</div>
+    </div>`;
+  }
+
+  h+=`</div>`; // close left panel
+
+  // ════════════════════════════
+  // RIGHT PANEL — LIFESTYLE + JOURNAL
+  // ════════════════════════════
+  h+=`<div style="display:flex;flex-direction:column;gap:8px">`;
+
+  // Routine checklist
+  h+=`<div style="background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden">
+    <div style="padding:9px 12px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between">
+      <span style="font-family:var(--fm);font-size:9px;color:var(--txt2);text-transform:uppercase;letter-spacing:.1em">Daily Routine</span>
+      <span style="font-family:var(--fm);font-size:9px;color:${routineDone===LIFESTYLE.length?'var(--grn)':'var(--txt3)'}">${routineDone}/${LIFESTYLE.length}</span>
+    </div>`;
+  LIFESTYLE.forEach((item,idx)=>{
+    const done=!!((dl.routine||{})[item.id]);
+    // Add subtle section dividers
+    if(idx===3) h+=`<div style="height:1px;background:rgba(232,160,32,0.1);margin:0 10px"></div>`;
+    if(idx===10) h+=`<div style="height:1px;background:rgba(167,139,250,0.1);margin:0 10px"></div>`;
+    h+=`<div onclick="toggleLifestyle('${item.id}','${todayStr}')"
+      style="display:flex;align-items:center;gap:9px;padding:7px 12px;cursor:pointer;transition:background .1s;border-bottom:1px solid var(--bdr);${done?'background:rgba(0,217,126,0.03)':''}"
+      onmouseover="this.style.background='var(--s3)'" onmouseout="this.style.background='${done?'rgba(0,217,126,0.03)':'transparent'}'">
+      <span style="font-size:14px;flex-shrink:0">${item.icon}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-family:var(--fm);font-size:10px;color:${done?'var(--txt3)':'var(--txt)'};${done?'text-decoration:line-through':''}">${item.label}</div>
+        <div style="font-family:var(--fm);font-size:8px;color:var(--txt3);margin-top:1px">${item.time}</div>
+      </div>
+      <div style="width:16px;height:16px;border-radius:3px;border:1px solid ${done?'var(--grn)':'var(--bdr2)'};background:${done?'var(--grn)':'transparent'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        ${done?'<span style="color:#000;font-size:9px;font-weight:700">✓</span>':''}
       </div>
     </div>`;
   });
-
-  h+=`<div class="sh">Daily Journal & Log</div>`;
+  h+=`</div>`;
 
   // Weight log
-  h+=`<div style="background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r);padding:14px;margin-bottom:8px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <span style="font-size:12px;font-weight:500;color:var(--txt)">⚖️ Weight Log</span>
+  h+=`<div style="background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r);padding:12px">
+    <div style="font-family:var(--fm);font-size:9px;color:var(--txt2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">⚖️ Weight Log</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <input class="input-field" id="weight-inp" type="number" step="0.1" min="60" max="150"
+        value="${dl.weight||''}" placeholder="kg"
+        style="max-width:90px;font-size:13px;font-weight:700;text-align:center"/>
+      <div style="flex:1">
+        <div style="font-family:var(--fm);font-size:9px;color:var(--txt3)">Target: <span style="color:var(--gold2)">${WEIGHT_TARGET}kg</span> by Jul 20</div>
+        ${dl.weight?`<div style="font-family:var(--fm);font-size:9px;color:${dl.weight<=WEIGHT_TARGET?'var(--grn)':'var(--txt2)'}">
+          ${(dl.weight-WEIGHT_TARGET>0?'+':'')}${(dl.weight-WEIGHT_TARGET).toFixed(1)}kg from target</div>`:''}
+      </div>
       <button class="save-btn" onclick="saveWeight('${todayStr}')">Save</button>
-    </div>
-    <div style="display:flex;align-items:center;gap:12px">
-      <div>
-        <div class="field-label">Today's Weight (kg)</div>
-        <input class="input-field" id="weight-inp" type="number" step="0.1" min="60" max="150" value="${dl.weight||''}" placeholder="e.g. 99.5" style="max-width:140px"/>
-      </div>
-      <div style="font-family:var(--fm);font-size:11px;color:var(--txt3)">
-        Target: <span style="color:var(--gold2)">${WEIGHT_TARGET} kg</span> by Jul 20<br>
-        ${dl.weight?`<span style="color:${dl.weight<=WEIGHT_TARGET?'var(--grn)':'var(--txt2)'}">${(dl.weight-WEIGHT_TARGET>0?'+':'')}${(dl.weight-WEIGHT_TARGET).toFixed(1)} kg from target</span>`:'—'}
-      </div>
     </div>
   </div>`;
 
   // Daily diary
-  h+=`<div style="background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r);padding:14px;margin-bottom:8px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <span style="font-size:12px;font-weight:500;color:var(--txt)">📓 Daily Diary</span>
+  h+=`<div style="background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r);padding:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <span style="font-family:var(--fm);font-size:9px;color:var(--txt2);text-transform:uppercase;letter-spacing:.1em">📓 Daily Diary</span>
       <button class="save-btn" onclick="saveDiary('${todayStr}')">Save</button>
     </div>
-    <textarea class="textarea-field" id="diary-inp" placeholder="How did today go? Mood, energy, wins, struggles...">${dl.diary||''}</textarea>
+    <textarea class="textarea-field" id="diary-inp" style="min-height:70px;font-size:11px" placeholder="How did today go...">${dl.diary||''}</textarea>
   </div>`;
 
   // Aeon essay scorer
-  h+=`<div style="background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r);padding:14px;margin-bottom:8px">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <span style="font-size:12px;font-weight:500;color:var(--txt)">📝 Aeon Essay Scorer</span>
-      <div style="display:flex;gap:8px"><button class="score-btn" onclick="scoreEssay('${todayStr}')">Score with AI ✦</button><button class="save-btn" onclick="saveEssay('${todayStr}')">Save</button></div>
+  h+=`<div style="background:var(--s2);border:1px solid var(--bdr);border-radius:var(--r);padding:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <span style="font-family:var(--fm);font-size:9px;color:var(--txt2);text-transform:uppercase;letter-spacing:.1em">📝 Aeon Essay</span>
+      <div style="display:flex;gap:6px">
+        <button class="score-btn" onclick="scoreEssay('${todayStr}')">Score ✦</button>
+        <button class="save-btn" onclick="saveEssay('${todayStr}')">Save</button>
+      </div>
     </div>
-    ${(dl.aeon||{}).readScore?`<div class="score-chips"><span class="sc-chip chip-r">Reading: ${dl.aeon.readScore}/10</span><span class="sc-chip chip-w">Writing: ${dl.aeon.writeScore}/10</span></div>`:''}
-    <div class="field-group"><div class="field-label">Article Link</div><input class="input-field" id="essay-link" placeholder="https://aeon.co/essays/..." value="${(dl.aeon||{}).link||''}"/></div>
-    <div class="field-group"><div class="field-label">Your Essay / Response (max 2000 words)</div><textarea class="textarea-field" id="essay-text" style="min-height:100px" placeholder="Paste your written response here...">${(dl.aeon||{}).essay||''}</textarea></div>
-    <div id="score-result" class="score-result ${(dl.aeon||{}).scoreResult?'vis':''}">${(dl.aeon||{}).scoreResult||''}</div>
+    ${(dl.aeon||{}).readScore?`<div class="score-chips" style="margin-bottom:6px">
+      <span class="sc-chip chip-r">Reading: ${dl.aeon.readScore}/10</span>
+      <span class="sc-chip chip-w">Writing: ${dl.aeon.writeScore}/10</span>
+    </div>`:''}
+    <div class="field-group">
+      <div class="field-label">Article link</div>
+      <input class="input-field" id="essay-link" placeholder="https://aeon.co/..." value="${(dl.aeon||{}).link||''}" style="font-size:11px"/>
+    </div>
+    <div class="field-group" style="margin-bottom:0">
+      <div class="field-label">Your response</div>
+      <textarea class="textarea-field" id="essay-text" style="min-height:80px;font-size:11px" placeholder="Paste your essay...">${(dl.aeon||{}).essay||''}</textarea>
+    </div>
+    <div id="score-result" class="score-result ${(dl.aeon||{}).scoreResult?'vis':''}" style="font-size:10px">${(dl.aeon||{}).scoreResult||''}</div>
   </div>`;
 
-  // End-of-day summary (show after 7 PM)
-  if(isAfterStudy){
-    const vidsDoneToday=blocks.filter(b=>b.vids.every(v=>prog[v.key])).length;
-    h+=`<div class="eod-card">
-      <div class="eod-title">📊 End of Day Summary</div>
-      <div class="eod-grid">
-        <div class="eod-stat"><div class="eod-val">${fmt(autoMins)}</div><div class="eod-key">Studied</div></div>
-        <div class="eod-stat"><div class="eod-val">${doneVids}/${totalVids}</div><div class="eod-key">Videos</div></div>
-        <div class="eod-stat"><div class="eod-val">${routineDone}/${LIFESTYLE.length}</div><div class="eod-key">Routine</div></div>
-        <div class="eod-stat"><div class="eod-val">${dl.weight||'—'}</div><div class="eod-key">Weight kg</div></div>
-      </div>
-      <div style="font-family:var(--fm);font-size:10px;color:var(--txt3)">
-        ${pct>=80?'✓ Strong day.':pct>=50?'⚡ Decent day — push harder tomorrow.':'⚠ Below target — catch up tomorrow.'}
-        · ${sched.ahead?`▲ ${sched.days.toFixed(1)}d ahead of schedule.`:`▼ ${sched.days.toFixed(1)}d behind — front-load tomorrow.`}
-      </div>
-    </div>`;
-  }
+  h+=`</div>`; // close right panel
+  h+=`</div>`; // close two-column grid
 
   document.getElementById('panel-targets').innerHTML=h;
-  // Auto-scroll to current block (1 frame delay to let DOM paint)
+
+  // Auto-scroll to current block
   requestAnimationFrame(()=>{
     const curBlk=document.querySelector('.blk-card.blk-current');
-    if(curBlk){
-      curBlk.scrollIntoView({behavior:'smooth',block:'center'});
-    }
+    if(curBlk)curBlk.scrollIntoView({behavior:'smooth',block:'center'});
   });
+}
+
+// ── BLOCK RENDER HELPER ──
+function renderBlock(blk,bi,currentBlkIdx){
+  const allDone=blk.vids.every(v=>prog[v.key]);
+  const doneCnt=blk.vids.filter(v=>prog[v.key]).length;
+  const isOpen=!!ui.blkOpen[bi];
+  const isCurrent=bi===currentBlkIdx;
+  const blkMins=blk.vids.reduce((a,v)=>a+v.s.m,0);
+  const sessionCol=blk.session==='night'?'var(--prp)':'var(--gold)';
+
+  let h=`<div class="blk-card ${isCurrent?'blk-current':''}${allDone?' blk-done':''}" id="blkcard-${bi}" style="border-radius:0;border:none;border-bottom:1px solid var(--bdr)">
+    <div class="blk-hd" onclick="toggleBlk(${bi})" style="padding:8px 14px">
+      <div style="font-family:var(--fm);font-size:16px;font-weight:700;min-width:20px;color:${allDone?'var(--grn)':isCurrent?sessionCol:'var(--txt3)'}">${blk.num}</div>
+      <div style="flex-shrink:0">
+        <div style="font-family:var(--fm);font-size:10px;font-weight:500;color:${isCurrent?sessionCol:'var(--txt2)'}">${blk.blockLabel}</div>
+        <div style="font-family:var(--fm);font-size:8px;color:var(--txt3)">study ${blk.studyRange.split('–')[0].trim()} · tread ${blk.treadRange.split('–')[1]?.trim()||''}</div>
+      </div>
+      <div style="flex:1;min-width:0;padding:0 10px">
+        <div style="font-size:11px;color:${allDone?'var(--txt3)':'var(--txt)'};font-family:var(--fm);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${blk.vids[0]?blk.vids[0].modTitle:''}</div>
+        <div style="font-family:var(--fm);font-size:8px;color:var(--txt3);margin-top:1px">${fmt(blkMins)} · ${doneCnt}/${blk.vids.length}</div>
+      </div>
+      ${isCurrent?`<span style="font-family:var(--fm);font-size:8px;color:${sessionCol};background:${blk.session==='night'?'var(--pra)':'var(--ga)'};border:1px solid ${blk.session==='night'?'rgba(167,139,250,0.2)':'rgba(232,160,32,0.2)'};padding:2px 7px;border-radius:2px;flex-shrink:0">NOW</span>`:''}
+      <div class="big-chk ${allDone?'done':''}" onclick="event.stopPropagation();markBlk(${bi},${!allDone})" style="flex-shrink:0"><span class="bct">✓</span></div>
+    </div>
+    <div class="blk-body ${isOpen?'open':''}" id="blk-${bi}">
+      <div style="padding:6px 14px 4px">
+        <div style="font-family:var(--fm);font-size:8px;color:var(--txt3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;display:flex;align-items:center;gap:6px">📖 ${blk.studyRange}<span style="flex:1;height:1px;background:var(--bdr);display:inline-block;margin-left:4px"></span></div>
+        <div class="bvideo-list">`;
+  blk.vids.forEach((v,vi2)=>{
+    const d=!!prog[v.key];
+    const isFocus=isCurrent&&vi2===0&&!d;
+    h+=`<div class="bvi${d?' done':''}${isFocus?' bvi-focus':''}" data-key="${v.key}" id="vid-${bi}-${vi2}" onclick="toggleVidT('${v.key}')">
+      <div class="chk" style="width:12px;height:12px"><span class="chk-tick">✓</span></div>
+      <span class="bvi-num">${v.s.vidLabel}</span>
+      <span style="font-family:var(--fm);font-size:9px;color:var(--gold);background:rgba(232,160,32,0.08);border:1px solid rgba(232,160,32,0.12);padding:1px 5px;border-radius:2px;white-space:nowrap;flex-shrink:0">${v.s.m}m</span>
+      <div class="bvi-body">
+        <div class="bvi-title">${v.s.t}</div>
+        <div class="bvi-ctx">${v.topicTitle} · ${v.modTitle}</div>
+      </div>
+    </div>`;
+  });
+  h+=`</div></div>
+      <div class="tread-row" id="tread-${bi}" style="margin:4px 10px 6px">
+        <div style="font-size:14px">🏃</div>
+        <div class="tr-info"><div class="tr-title" style="font-size:10px">Treadmill · ${blk.treadRange}</div><div class="tr-sub">10 min · 4 km/hr</div></div>
+        <div class="big-chk ${blk.treadDone?'done':''}" style="border-color:rgba(0,217,126,0.3);flex-shrink:0" onclick="toggleTread(${bi})"><span class="bct">✓</span></div>
+      </div>
+    </div>
+  </div>`;
+  return h;
 }
 
 function toggleBlk(bi){
