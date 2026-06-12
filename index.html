@@ -610,17 +610,15 @@ function markPlanDirtyOnly(){
 
 function flushSave(){
   if(!_dirty) return;
-  if(!window.storage){ _dirty=false; return; }
   setSyncDot('saving');
-  Promise.all([
-    window.storage.set(STORE_PROG, encodeProg()),
-    window.storage.set(STORE_DAY,  encodeDay())
-  ]).then(()=>{
+  try {
+    localStorage.setItem(STORE_PROG, encodeProg());
+    localStorage.setItem(STORE_DAY,  encodeDay());
     _dirty=false;
     setSyncDot('synced');
-  }).catch(()=>{
-    // Silent — will retry at next interval
-  });
+  } catch(e) {
+    setSyncDot('error');
+  }
 }
 
 // FIX: startAutosave() now also starts the midnight-check interval,
@@ -740,38 +738,19 @@ function init(){
     handleDailyClick(e);
   });
 
-  if(window.storage){
-    Promise.all([
-      window.storage.get(STORE_PROG).catch(()=>null),
-      window.storage.get(STORE_DAY).catch(()=>null)
-    ]).then(([rp,rd])=>{
-      decodeProg(rp&&rp.value?rp.value:'');
-      decodeDay(rd&&rd.value?rd.value:'');
-      buildAndLockTodayPlan();
-      // FIX: set _lastDay after data is loaded, before starting intervals
-      _lastDay = todayStr();
-      setSyncDot('synced');
-      updateTopbar();
-      renderSyllabus();
-      startAutosave(); // starts both autosave + midnight-check intervals
-    }).catch(()=>{
-      decodeProg('');
-      buildAndLockTodayPlan();
-      _lastDay = todayStr();
-      setSyncDot('synced');
-      updateTopbar();
-      renderSyllabus();
-      startAutosave();
-    });
-  } else {
+  // Load from localStorage (works on any browser / GitHub Pages)
+  try {
+    decodeProg(localStorage.getItem(STORE_PROG)||'');
+    decodeDay(localStorage.getItem(STORE_DAY)||'');
+  } catch(e) {
     decodeProg('');
-    buildAndLockTodayPlan();
-    _lastDay = todayStr();
-    setSyncDot('synced');
-    updateTopbar();
-    renderSyllabus();
-    startAutosave();
   }
+  buildAndLockTodayPlan();
+  _lastDay = todayStr();
+  setSyncDot('synced');
+  updateTopbar();
+  renderSyllabus();
+  startAutosave();
 }
 
 init();
